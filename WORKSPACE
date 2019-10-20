@@ -132,7 +132,7 @@ tf_workspace(tf_repo_name = "org_tensorflow")
 new_local_repository(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
-    path = "/usr",
+    path = "/usr/local",
 )
 
 new_local_repository(

@@ -1,0 +1,51 @@
+FROM nvidia/cudagl:10.1-base
+
+MAINTAINER <mediapipe@google.com>
+
+WORKDIR /io
+WORKDIR /mediapipe
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        wget \
+        unzip \
+        python \
+        python-pip \
+        libopencv-core-dev \
+        libopencv-highgui-dev \
+        libopencv-imgproc-dev \
+        libopencv-video-dev \
+        mesa-common-dev \
+        libegl1-mesa-dev \
+        libgles2-mesa-dev \
+        software-properties-common && \
+    add-apt-repository -y ppa:openjdk-r/ppa && \
+    apt-get update && apt-get install -y openjdk-8-jdk && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade setuptools
+RUN pip install future
+
+# Install bazel
+ARG BAZEL_VERSION=0.26.1
+RUN mkdir /bazel && \
+    wget --no-check-certificate -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/b\
+azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
+    wget --no-check-certificate -O  /bazel/LICENSE.txt "https://raw.githubusercontent.com/bazelbuild/bazel/master/LICENSE" && \
+    chmod +x /bazel/installer.sh && \
+    /bazel/installer.sh  && \
+    rm -f /bazel/installer.sh
+
+RUN pip install numpy
+RUN pip install opencv-python
+COPY . /mediapipe/
+
+# If we want the docker image to contain the pre-built hand tracking cpu/gpu binary, do the following
+RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/hand_tracking:hand_tracking_cpu
+RUN bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS mediapipe/examples/desktop/hand_tracking:hand_tracking_gpu

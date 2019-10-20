@@ -39,7 +39,7 @@ mkdir opencv/release
 cd opencv/release
 cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local \
       -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_opencv_ts=OFF \
-      -DOPENCV_EXTRA_MODULES_PATH=/tmp/build_opencv/opencv_contrib/modules \
+      -DOPENCV_EXTRA_MODULES_PATH=/tmp/build_opencv/opencv_contrib/modules -DBUILD_EXAMPLES=ON \
       -DBUILD_opencv_aruco=OFF -DBUILD_opencv_bgsegm=OFF -DBUILD_opencv_bioinspired=OFF \
       -DBUILD_opencv_ccalib=OFF -DBUILD_opencv_datasets=OFF -DBUILD_opencv_dnn=OFF \
       -DBUILD_opencv_dnn_objdetect=OFF -DBUILD_opencv_dpm=OFF -DBUILD_opencv_face=OFF \
@@ -49,9 +49,9 @@ cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local \
       -DBUILD_opencv_rgbd=OFF -DBUILD_opencv_saliency=OFF -DBUILD_opencv_shape=OFF \
       -DBUILD_opencv_structured_light=OFF -DBUILD_opencv_surface_matching=OFF \
       -DBUILD_opencv_world=OFF -DBUILD_opencv_xobjdetect=OFF -DBUILD_opencv_xphoto=OFF
-make -j
+make -j 4
 sudo make install
-rm -rf /tmp/build_opencv
+#rm -rf /tmp/build_opencv
 echo "OpenCV has been built. You can find the header files and libraries in /usr/local/include/opencv4/opencv2 and /usr/local/lib"
 
 # Modify the build file.
