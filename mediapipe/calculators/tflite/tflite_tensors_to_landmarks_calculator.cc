@@ -178,7 +178,14 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
         .Tag("LANDMARKS")
         .Add(output_landmarks.release(), cc->InputTimestamp());
   }
-
+  /*
+Todo: get landmarks
+        float landmarks.x()
+        float landmarks.y()
+        float landmarks.z()
+      need check or not ?
+      output_landmarks or normalized_landmarks or absolute_landmarks ?
+  */
   return ::mediapipe::OkStatus();
 }
 
