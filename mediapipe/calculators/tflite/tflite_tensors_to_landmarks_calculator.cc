@@ -18,6 +18,8 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "tensorflow/lite/interpreter.h"
 
+#include "landmarks_to_shm/landmarks_to_shm.h"
+
 namespace mediapipe {
 
 // A calculator for converting TFLite tensors from regression models into
@@ -154,6 +156,8 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
     output_landmarks->push_back(landmark);
   }
 
+  static landmarks_to_shm::landmarks landmarks_shm;
+
   // Output normalized landmarks if required.
   if (cc->Outputs().HasTag("NORM_LANDMARKS")) {
     auto output_norm_landmarks =
@@ -167,6 +171,7 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
       norm_landmark.set_z(landmark.z() / options_.normalize_z());
 
       output_norm_landmarks->push_back(norm_landmark);
+      landmarks_shm.norm_landmarks->push_back(norm_landmark);
     }
     cc->Outputs()
         .Tag("NORM_LANDMARKS")
@@ -186,6 +191,7 @@ Todo: get landmarks
       need check or not ?
       output_landmarks or normalized_landmarks or absolute_landmarks ?
   */
+  landmarks_shm.print_landmarks();
   return ::mediapipe::OkStatus();
 }
 
