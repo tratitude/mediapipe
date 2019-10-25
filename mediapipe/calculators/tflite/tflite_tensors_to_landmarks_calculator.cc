@@ -18,7 +18,7 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "tensorflow/lite/interpreter.h"
 
-#include "landmarks_to_shm/landmarks_to_shm.h"
+#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
 
 namespace mediapipe {
 
@@ -133,6 +133,21 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
 
   auto output_landmarks = absl::make_unique<std::vector<Landmark>>();
 
+/*********************************************************************
+Todo: get landmarks
+        float landmarks.x()
+        float landmarks.y()
+        float landmarks.z()
+      need check or not ?
+      output_landmarks or normalized_landmarks or absolute_landmarks ?
+*********************************************************************/
+  static landmarks_to_shm::landmarks landmarks_shm;
+  landmarks_shm.norm_landmarks.clear();
+  landmarks_shm.norm_landmarks.shrink_to_fit();
+  landmarks_shm.landmarks.clear();
+  landmarks_shm.landmarks.clear();
+/********************************************************************/
+
   for (int ld = 0; ld < num_landmarks_; ++ld) {
     const int offset = ld * num_dimensions;
     Landmark landmark;
@@ -153,10 +168,13 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
     if (num_dimensions > 2) {
       landmark.set_z(raw_landmarks[offset + 2]);
     }
+/********************************************************************
+push_back landmarks
+********************************************************************/
+    landmarks_shm.landmarks.push_back(landmark);
+/*******************************************************************/
     output_landmarks->push_back(landmark);
   }
-
-  static landmarks_to_shm::landmarks landmarks_shm;
 
   // Output normalized landmarks if required.
   if (cc->Outputs().HasTag("NORM_LANDMARKS")) {
@@ -171,7 +189,11 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
       norm_landmark.set_z(landmark.z() / options_.normalize_z());
 
       output_norm_landmarks->push_back(norm_landmark);
-      landmarks_shm.norm_landmarks->push_back(norm_landmark);
+/********************************************************************
+push_back norm_landmarks
+********************************************************************/
+      landmarks_shm.norm_landmarks.push_back(norm_landmark);
+/*******************************************************************/
     }
     cc->Outputs()
         .Tag("NORM_LANDMARKS")
@@ -183,15 +205,12 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
         .Tag("LANDMARKS")
         .Add(output_landmarks.release(), cc->InputTimestamp());
   }
-  /*
-Todo: get landmarks
-        float landmarks.x()
-        float landmarks.y()
-        float landmarks.z()
-      need check or not ?
-      output_landmarks or normalized_landmarks or absolute_landmarks ?
-  */
+/********************************************************************
+print landmarks
+********************************************************************/
+  //landmarks_shm.print_norm_landmarks();
   landmarks_shm.print_landmarks();
+/*******************************************************************/
   return ::mediapipe::OkStatus();
 }
 

@@ -1,6 +1,6 @@
 # Video from webcam running on desktop GPU
 # This works only for linux currently
-bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS \
+bazel build --sandbox_debug -c opt --copt -DMESA_EGL_NO_X11_HEADERS \
     mediapipe/examples/desktop/hand_tracking:hand_tracking_gpu
 
 # It should print:
