@@ -9,8 +9,11 @@ namespace landmarks_to_shm{
     public:
         void print_norm_landmarks(void);
         void print_landmarks(void);
+        void print_letterbox_padding(void);
+        
         std::vector<mediapipe::NormalizedLandmark> norm_landmarks;
         std::vector<mediapipe::Landmark> landmarks;
+        std::array<float, 4> letterbox_padding;
     };
 }
 

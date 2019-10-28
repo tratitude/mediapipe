@@ -33,6 +33,8 @@
 #include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/framework/port/ret_check.h"
 
+#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
+
 namespace mediapipe {
 
 namespace {
@@ -106,6 +108,34 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
 
     auto output_landmarks =
         absl::make_unique<std::vector<NormalizedLandmark>>();
+
+/*********************************************************************
+Todo: get landmarks
+        float landmarks.x()
+        float landmarks.y()
+        float landmarks.z()
+      need check or not ?
+      output_landmarks or normalized_landmarks or absolute_landmarks ?
+*********************************************************************/
+  static landmarks_to_shm::landmarks landmarks_shm;
+  landmarks_shm.norm_landmarks.clear();
+  landmarks_shm.norm_landmarks.shrink_to_fit();
+  /*landmarks_shm.landmarks.clear();
+  landmarks_shm.landmarks.clear();*/
+/********************************************************************/
+
+/*********************************************************************
+Todo: get letterbox_padding
+Issue: if there has value not equal to 0 in letterbox_padding,
+        will cause
+I1028 23393 gl_context.cc:630] Found unchecked GL error: GL_INVALID_FRAMEBUFFER_OPERATION
+W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
+*********************************************************************/
+  for(int i=0; i<4; i++){
+    landmarks_shm.letterbox_padding[i] = letterbox_padding[i];
+  }
+/********************************************************************/
+
     for (const auto& landmark : input_landmarks) {
       NormalizedLandmark new_landmark;
       const float new_x = (landmark.x() - left) / (1.0f - left_and_right);
@@ -117,11 +147,25 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
       new_landmark.set_z(landmark.z());
 
       output_landmarks->emplace_back(new_landmark);
+/********************************************************************
+push_back norm_landmarks
+********************************************************************/
+      landmarks_shm.norm_landmarks.push_back(new_landmark);
+/*******************************************************************/
     }
 
     cc->Outputs()
         .Tag(kLandmarksTag)
         .Add(output_landmarks.release(), cc->InputTimestamp());
+
+/********************************************************************
+print landmarks and letterbox_padding
+********************************************************************/
+  landmarks_shm.print_norm_landmarks();
+  //landmarks_shm.print_landmarks();
+  landmarks_shm.print_letterbox_padding();
+/*******************************************************************/
+
     return ::mediapipe::OkStatus();
   }
 };

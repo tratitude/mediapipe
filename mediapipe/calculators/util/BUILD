@@ -639,6 +639,7 @@ cc_library(
         "//mediapipe/framework/formats:location",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
+        "//mediapipe/landmarks_to_shm:landmarks_to_shm",
     ],
     alwayslink = 1,
 )
