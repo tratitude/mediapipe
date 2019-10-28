@@ -33,6 +33,7 @@ cc_library(
         # because visibility of landmark_cc_proto is "//mediapipe:__subpackages__"
         "//mediapipe/framework/port:ret_check",
         "@org_tensorflow//tensorflow/lite:framework",
+        "@boost//:interprocess",
     ],
     visibility = ["//visibility:public"],
     alwayslink = 1,

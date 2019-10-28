@@ -161,9 +161,21 @@ push_back norm_landmarks
 /********************************************************************
 print landmarks and letterbox_padding
 ********************************************************************/
-  landmarks_shm.print_norm_landmarks();
-  //landmarks_shm.print_landmarks();
-  landmarks_shm.print_letterbox_padding();
+    landmarks_shm.print_norm_landmarks();
+    //landmarks_shm.print_landmarks();
+    landmarks_shm.print_letterbox_padding();
+/*******************************************************************/
+
+/********************************************************************
+save landmarks
+********************************************************************/
+    landmarks_shm.save_norm_landmarks(landmarks_shm.norm_landmarks);
+/*******************************************************************/
+
+/********************************************************************
+print shm landmarks
+********************************************************************/
+    landmarks_shm.print_shm_norm_landmarks();
 /*******************************************************************/
 
     return ::mediapipe::OkStatus();
