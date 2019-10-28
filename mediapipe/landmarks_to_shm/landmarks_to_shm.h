@@ -16,7 +16,7 @@ namespace landmarks_to_shm{
         shm(void);
         ~shm();
         void save_norm_landmarks(const std::vector<mediapipe::NormalizedLandmark>& norm_landmarks);
-        void get_norm_landmarks(float *norm_landmarks[21][3]);
+        void get_norm_landmarks(float norm_landmarks[21][3]);
         void print_shm_norm_landmarks(void);
     };
 

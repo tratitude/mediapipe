@@ -84,7 +84,7 @@ void landmarks_to_shm::shm::save_norm_landmarks(
     }
 }
 
-void landmarks_to_shm::shm::get_norm_landmarks(float *norm_landmarks[21][3])
+void landmarks_to_shm::shm::get_norm_landmarks(float norm_landmarks[21][3])
 {
     using namespace boost::interprocess;
 
@@ -98,7 +98,7 @@ void landmarks_to_shm::shm::get_norm_landmarks(float *norm_landmarks[21][3])
 
     for(int i=0; i<21; i++){
         for(int j=0; j<3; j++){
-            *(norm_landmarks[i][j]) = mem[i*3 + j];
+            norm_landmarks[i][j] = mem[i*3 + j];
         }
     }
 }
