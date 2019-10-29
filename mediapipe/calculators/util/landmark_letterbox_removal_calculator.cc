@@ -122,15 +122,18 @@ Todo: get landmarks
       output_landmarks or normalized_landmarks or absolute_landmarks ?
 *********************************************************************/
   static landmarks_to_shm::landmarks landmarks_shm;
-/*
+
   //Open the managed segment
   boost::interprocess::managed_shared_memory segment(boost::interprocess::open_copy_on_write, "NormLandmarks");
 
   //Find the vector using the c-string name
   landmarks_to_shm::NormLandVector *norm_land_vector_ptr = segment.find<landmarks_to_shm::NormLandVector>("NormLandVector").first;
-*/
+
+// seg fault
+/*
   landmarks_to_shm::NormLandVector *norm_land_vector_ptr;
   landmarks_shm.get_normLandVector(&norm_land_vector_ptr);
+*/
 #ifdef PRINT_DEBUG
   std::printf("%p\n", norm_land_vector_ptr);
 #endif
