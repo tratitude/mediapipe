@@ -35,6 +35,10 @@
 
 #include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
 
+#ifdef PRINT_DEBUG
+  #include <iostream>
+#endif
+
 namespace mediapipe {
 
 namespace {
@@ -118,8 +122,26 @@ Todo: get landmarks
       output_landmarks or normalized_landmarks or absolute_landmarks ?
 *********************************************************************/
   static landmarks_to_shm::landmarks landmarks_shm;
-  landmarks_shm.norm_landmarks.clear();
-  landmarks_shm.norm_landmarks.shrink_to_fit();
+/*
+  //Open the managed segment
+  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_copy_on_write, "NormLandmarks");
+
+  //Find the vector using the c-string name
+  landmarks_to_shm::NormLandVector *norm_land_vector_ptr = segment.find<landmarks_to_shm::NormLandVector>("NormLandVector").first;
+*/
+  landmarks_to_shm::NormLandVector *norm_land_vector_ptr;
+  landmarks_shm.get_normLandVector(&norm_land_vector_ptr);
+#ifdef PRINT_DEBUG
+  std::printf("%p\n", norm_land_vector_ptr);
+#endif
+  norm_land_vector_ptr->clear();
+#ifdef PRINT_DEBUG
+  std::puts("clear");
+#endif
+  norm_land_vector_ptr->shrink_to_fit();
+#ifdef PRINT_DEBUG
+  std::puts("shrink_to_fit");
+#endif
   /*landmarks_shm.landmarks.clear();
   landmarks_shm.landmarks.clear();*/
 /********************************************************************/
@@ -131,9 +153,11 @@ Issue: if there has value not equal to 0 in letterbox_padding,
 I1028 23393 gl_context.cc:630] Found unchecked GL error: GL_INVALID_FRAMEBUFFER_OPERATION
 W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
 *********************************************************************/
+  /*
   for(int i=0; i<4; i++){
     landmarks_shm.letterbox_padding[i] = letterbox_padding[i];
   }
+  /*
 /********************************************************************/
 
     for (const auto& landmark : input_landmarks) {
@@ -150,7 +174,10 @@ W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
 /********************************************************************
 push_back norm_landmarks
 ********************************************************************/
-      landmarks_shm.norm_landmarks.push_back(new_landmark);
+      norm_land_vector_ptr->push_back(new_landmark);
+    #ifdef PRINT_DEBUG
+      std::puts("push_back");
+    #endif
 /*******************************************************************/
     }
 
@@ -161,15 +188,15 @@ push_back norm_landmarks
 /********************************************************************
 print landmarks and letterbox_padding
 ********************************************************************/
-    landmarks_shm.print_norm_landmarks();
+    //landmarks_shm.print_norm_landmarks();
     //landmarks_shm.print_landmarks();
-    landmarks_shm.print_letterbox_padding();
+    //landmarks_shm.print_letterbox_padding();
 /*******************************************************************/
 
 /********************************************************************
 save landmarks
 ********************************************************************/
-    landmarks_shm.save_norm_landmarks(landmarks_shm.norm_landmarks);
+    //landmarks_shm.save_norm_landmarks(landmarks_shm.norm_landmarks);
 /*******************************************************************/
 
 /********************************************************************

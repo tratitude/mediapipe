@@ -44,27 +44,36 @@ landmarks_to_shm::shm::shm(void)
 
     shared_memory_object::remove("NormLandmarks");
 
-    //Create a shared memory object.
-    shared_memory_object shmobj (create_only, "NormLandmarks", read_write);
+    //Create a new segment with given name and size
+    managed_shared_memory segment(create_only, "NormLandmarks", 65536);
 
-    //Set size
-    shmobj.truncate(63*sizeof(float));
+    //Initialize shared memory STL-compatible allocator
+    const ShmemAllocator alloc_inst (segment.get_segment_manager());
 
-    //Map the whole shared memory in this process
-    mapped_region region(shmobj, read_write, 0, 63);
-
-    //Write all the memory to 1
-    std::memset(region.get_address(), 0, region.get_size());
+    //Construct a vector named "NormLandVector" in shared memory with argument alloc_inst
+    norm_landmarks = segment.construct<NormLandVector>("NormLandVector")(alloc_inst);
+#ifdef PRINT_DEBUG
+    std::puts("shm");
+#endif
 }
 
 landmarks_to_shm::shm::~shm()
 {
     using namespace boost::interprocess;
 
+    //Open the managed segment
+    managed_shared_memory segment(open_only, "NormLandmarks");
+
+    //Find the vector using the c-string name
+    NormLandVector *myvector = segment.find<NormLandVector>("NormLandVector").first;
+
+    //When done, destroy the vector from the segment
+    segment.destroy<NormLandVector>("NormLandVector");
+    
     shared_memory_object::remove("NormLandmarks");
 }
 
-void landmarks_to_shm::shm::save_norm_landmarks(
+/*void landmarks_to_shm::shm::save_norm_landmarks(
     const std::vector<mediapipe::NormalizedLandmark>& norm_landmarks)
 {
     using namespace boost::interprocess;
@@ -82,9 +91,9 @@ void landmarks_to_shm::shm::save_norm_landmarks(
         mem[num++] = landmark.y();
         mem[num++] = landmark.z();
     }
-}
+}*/
 
-void landmarks_to_shm::shm::get_norm_landmarks(float norm_landmarks[21][3])
+/*void landmarks_to_shm::shm::get_norm_landmarks(float norm_landmarks[21][3])
 {
     using namespace boost::interprocess;
 
@@ -101,24 +110,35 @@ void landmarks_to_shm::shm::get_norm_landmarks(float norm_landmarks[21][3])
             norm_landmarks[i][j] = mem[i*3 + j];
         }
     }
-}
+}*/
 
 void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
 {
 #ifdef PRINT_SHM_LANDMARKS
+    std::cout << "print_shm_norm_landmarks\n";
+    
     using namespace boost::interprocess;
 
-    //Create a shared memory object.
-    shared_memory_object shmobj (open_only, "NormLandmarks", read_only);
-
-    //Map the whole shared memory in this process
-    mapped_region region(shmobj, read_only, 0, 63);
-
-    float *mem = (float*)region.get_address();
-    for(int i=0; i<21; i++){
-        std::cout << i << ": x: " << mem[i] << 
-            " y: " << mem[i+1] << 
-            " z: " << mem[i+2] << std::endl;
+    int num = 0;
+    for(auto it=norm_landmarks->begin(); it!=norm_landmarks->end(); it++){
+        std::cout << num++ << ": x: " << it->x() << " y: " << it->y()
+            << " z: " << it->z() << std::endl;
     }
+#endif
+}
+
+void landmarks_to_shm::shm::get_normLandVector(landmarks_to_shm::NormLandVector **myvector)
+{
+    using namespace boost::interprocess;
+
+    //Open the managed segment
+    managed_shared_memory segment(open_copy_on_write, "NormLandmarks");
+
+    //Find the vector using the c-string name
+    *myvector = segment.find<NormLandVector>("NormLandVector").first;
+
+#ifdef PRINT_DEBUG
+    std::printf("%p\n", *myvector);
+    std::puts("get_normLandVector");
 #endif
 }
