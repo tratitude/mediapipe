@@ -8,3 +8,4 @@ mediapipe/MediaPipe.xcodeproj
 mediapipe/MediaPipe.tulsiproj/*.tulsiconf-user
 bazel-mediapipe
 .vscode
+*.o
