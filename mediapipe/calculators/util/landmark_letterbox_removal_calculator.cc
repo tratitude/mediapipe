@@ -114,55 +114,39 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
         absl::make_unique<std::vector<NormalizedLandmark>>();
 
 /*********************************************************************
-Todo: get landmarks
-        float landmarks.x()
-        float landmarks.y()
-        float landmarks.z()
-      need check or not ?
-      output_landmarks or normalized_landmarks or absolute_landmarks ?
+*Todo: get landmarks
+*        float landmarks.x()
+*        float landmarks.y()
+*        float landmarks.z()
+*      need check or not ?
+*      output_landmarks or normalized_landmarks or absolute_landmarks ?
 *********************************************************************/
-  static landmarks_to_shm::landmarks landmarks_shm;
+  static landmarks_to_shm::shm landmarks_shm;
 
   //Open the managed segment
-  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_copy_on_write, "NormLandmarks");
+  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_copy_on_write, landmarks_shm.shm_name);
 
   //Find the vector using the c-string name
-  landmarks_to_shm::NormLandVector *norm_land_vector_ptr = segment.find<landmarks_to_shm::NormLandVector>("NormLandVector").first;
+  landmarks_to_shm::normLand3d_t *normLand3d;
+  normLand3d = segment.find<landmarks_to_shm::normLand3d_t>(landmarks_shm.norm_landmark_name).first;
+  int normLand3d_size = segment.find<landmarks_to_shm::normLand3d_t>(landmarks_shm.norm_landmark_name).second;
 
-// seg fault
-/*
-  landmarks_to_shm::NormLandVector *norm_land_vector_ptr;
-  landmarks_shm.get_normLandVector(&norm_land_vector_ptr);
-*/
 #ifdef PRINT_DEBUG
-  std::printf("%p\n", norm_land_vector_ptr);
+  std::puts("In calculator");
+  std::printf("normLand3d size: %d adress: %p\n", normLand3d_size, normLand3d);
 #endif
-  norm_land_vector_ptr->clear();
-#ifdef PRINT_DEBUG
-  std::puts("clear");
-#endif
-  norm_land_vector_ptr->shrink_to_fit();
-#ifdef PRINT_DEBUG
-  std::puts("shrink_to_fit");
-#endif
-  /*landmarks_shm.landmarks.clear();
-  landmarks_shm.landmarks.clear();*/
 /********************************************************************/
 
 /*********************************************************************
-Todo: get letterbox_padding
-Issue: if there has value not equal to 0 in letterbox_padding,
-        will cause
-I1028 23393 gl_context.cc:630] Found unchecked GL error: GL_INVALID_FRAMEBUFFER_OPERATION
-W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
+*Todo: get letterbox_padding
+*Issue: if there has value not equal to 0 in letterbox_padding,
+*        will cause
+*I1028 23393 gl_context.cc:630] Found unchecked GL error: GL_INVALID_FRAMEBUFFER_OPERATION
+*W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
 *********************************************************************/
-  /*
-  for(int i=0; i<4; i++){
-    landmarks_shm.letterbox_padding[i] = letterbox_padding[i];
-  }
-  /*
-/********************************************************************/
 
+/********************************************************************/
+    int normLand3d_counter = 0;
     for (const auto& landmark : input_landmarks) {
       NormalizedLandmark new_landmark;
       const float new_x = (landmark.x() - left) / (1.0f - left_and_right);
@@ -175,12 +159,14 @@ W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
 
       output_landmarks->emplace_back(new_landmark);
 /********************************************************************
-push_back norm_landmarks
+*update normLand3d
 ********************************************************************/
-      norm_land_vector_ptr->push_back(new_landmark);
-    #ifdef PRINT_DEBUG
-      std::puts("push_back");
-    #endif
+    normLand3d[normLand3d_counter++] = {new_landmark.x(), new_landmark.y(), new_landmark.z()};
+/*
+  #ifdef PRINT_DEBUG
+    std::printf("normLand3d: %d = (%f, %f, %f)\n", normLand3d_counter-1, normLand3d[normLand3d_counter-1].x, normLand3d[normLand3d_counter-1].y, normLand3d[normLand3d_counter-1].z);
+  #endif
+*/
 /*******************************************************************/
     }
 
@@ -189,23 +175,20 @@ push_back norm_landmarks
         .Add(output_landmarks.release(), cc->InputTimestamp());
 
 /********************************************************************
-print landmarks and letterbox_padding
+*print shm landmarks
 ********************************************************************/
-    //landmarks_shm.print_norm_landmarks();
-    //landmarks_shm.print_landmarks();
-    //landmarks_shm.print_letterbox_padding();
-/*******************************************************************/
+    // failed, just print 0
+    //landmarks_shm.print_shm_norm_landmarks();
 
-/********************************************************************
-save landmarks
-********************************************************************/
-    //landmarks_shm.save_norm_landmarks(landmarks_shm.norm_landmarks);
-/*******************************************************************/
+    //Open the managed segment
+    boost::interprocess::managed_shared_memory segment_test(boost::interprocess::open_copy_on_write, landmarks_shm.shm_name);
 
-/********************************************************************
-print shm landmarks
-********************************************************************/
-    landmarks_shm.print_shm_norm_landmarks();
+    //Find the vector using the c-string name
+    landmarks_to_shm::normLand3d_t *normLand3d_test = segment_test.find<landmarks_to_shm::normLand3d_t>(landmarks_shm.norm_landmark_name).first;
+
+    for(int i=0; i<landmarks_shm.norm_landmark_size; i++){
+          std::printf("normLand3d: %d = (%f, %f, %f)\n", i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
+    }
 /*******************************************************************/
 
     return ::mediapipe::OkStatus();
