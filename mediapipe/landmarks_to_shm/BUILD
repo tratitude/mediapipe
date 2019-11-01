@@ -22,8 +22,8 @@ load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library"
 # https://docs.bazel.build/versions/master/be/c-cpp.html#cc_library
 cc_library(
     name = "landmarks_to_shm",
-    srcs = ["landmarks_to_shm.cc"],
-    hdrs = ["landmarks_to_shm.h"],
+    srcs = ["landmarks_to_shm.cc", "landmarks_datatype.cc"],
+    hdrs = ["landmarks_to_shm.h", "landmarks_datatype.h"],
     deps = [
         "//mediapipe/calculators/tflite:tflite_tensors_to_landmarks_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
@@ -34,6 +34,7 @@ cc_library(
         "//mediapipe/framework/port:ret_check",
         "@org_tensorflow//tensorflow/lite:framework",
         "@boost//:interprocess",
+        #"//mediapipe/landmarks_to_shm:landmarks_datatype"
     ],
     visibility = ["//visibility:public"],
     alwayslink = 1,

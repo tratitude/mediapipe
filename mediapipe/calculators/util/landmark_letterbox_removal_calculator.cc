@@ -124,12 +124,15 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
   static landmarks_to_shm::shm landmarks_shm;
 
   //Open the managed segment
-  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_copy_on_write, landmarks_shm.shm_name);
+  boost::interprocess::managed_shared_memory segment(
+    boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
 
   //Find the vector using the c-string name
-  landmarks_to_shm::normLand3d_t *normLand3d;
-  normLand3d = segment.find<landmarks_to_shm::normLand3d_t>(landmarks_shm.norm_landmark_name).first;
-  int normLand3d_size = segment.find<landmarks_to_shm::normLand3d_t>(landmarks_shm.norm_landmark_name).second;
+  landmarks_datatype::normLand3d_t *normLand3d;
+  normLand3d = segment.find<landmarks_datatype::normLand3d_t>(
+    landmarks_datatype::norm_landmark_name).first;
+  int normLand3d_size = segment.find<landmarks_datatype::normLand3d_t>(
+    landmarks_datatype::norm_landmark_name).second;
 
 #ifdef PRINT_DEBUG
   std::puts("In calculator");
@@ -178,17 +181,21 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
 *print shm landmarks
 ********************************************************************/
     // failed, just print 0
-    //landmarks_shm.print_shm_norm_landmarks();
-
+    landmarks_shm.print_shm_norm_landmarks();
+  /*
     //Open the managed segment
-    boost::interprocess::managed_shared_memory segment_test(boost::interprocess::open_copy_on_write, landmarks_shm.shm_name);
+    boost::interprocess::managed_shared_memory segment_test(
+      boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    landmarks_to_shm::normLand3d_t *normLand3d_test = segment_test.find<landmarks_to_shm::normLand3d_t>(landmarks_shm.norm_landmark_name).first;
+    landmarks_datatype::normLand3d_t *normLand3d_test = segment_test.find<landmarks_datatype::normLand3d_t>(
+      landmarks_datatype::norm_landmark_name).first;
 
-    for(int i=0; i<landmarks_shm.norm_landmark_size; i++){
-          std::printf("normLand3d: %d = (%f, %f, %f)\n", i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
+    for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+          std::printf("normLand3d: %d = (%f, %f, %f)\n",
+           i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
     }
+  */
 /*******************************************************************/
 
     return ::mediapipe::OkStatus();

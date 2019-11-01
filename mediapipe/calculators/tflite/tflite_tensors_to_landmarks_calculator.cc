@@ -18,7 +18,7 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "tensorflow/lite/interpreter.h"
 
-#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
+//#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
 
 namespace mediapipe {
 

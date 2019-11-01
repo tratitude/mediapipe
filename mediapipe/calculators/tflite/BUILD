@@ -448,7 +448,7 @@ cc_library(
         "//mediapipe/framework/formats:landmark_cc_proto",
         "//mediapipe/framework/port:ret_check",
         "@org_tensorflow//tensorflow/lite:framework",
-        "//mediapipe/landmarks_to_shm:landmarks_to_shm",
+        #"//mediapipe/landmarks_to_shm:landmarks_to_shm",
     ],
     alwayslink = 1,
 )

@@ -3,15 +3,15 @@
 
 landmarks_to_shm::shm::shm(void)
 {
-    using namespace boost::interprocess;
-
-    shared_memory_object::remove(shm_name);
+    boost::interprocess::shared_memory_object::remove(landmarks_datatype::shm_name);
 
     //Create a new segment with given name and size
-    managed_shared_memory segment(create_only, shm_name, 65536);
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::create_only, landmarks_datatype::shm_name, 65536);
 
     //Construct a vector named "normLand3d_t" in shared memory with argument alloc_inst
-    normLand3d_t *normLand3d = segment.construct<normLand3d_t>(norm_landmark_name)[norm_landmark_size]();
+    landmarks_datatype::normLand3d_t *normLand3d = segment.construct<landmarks_datatype::normLand3d_t>(
+        landmarks_datatype::norm_landmark_name)[landmarks_datatype::norm_landmark_size]();
 
 #ifdef PRINT_DEBUG
     std::puts("In shm");
@@ -21,51 +21,53 @@ landmarks_to_shm::shm::shm(void)
 
 landmarks_to_shm::shm::~shm()
 {
-    using namespace boost::interprocess;
-
     //Open the managed segment
-    managed_shared_memory segment(open_only, shm_name);
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_only, landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    normLand3d_t *arr = segment.find<normLand3d_t>(norm_landmark_name).first;
+    landmarks_datatype::normLand3d_t *arr = segment.find<landmarks_datatype::normLand3d_t>(
+        landmarks_datatype::norm_landmark_name).first;
 
     //When done, destroy the vector from the segment
-    segment.destroy<normLand3d_t>(norm_landmark_name);
+    segment.destroy<landmarks_datatype::normLand3d_t>(landmarks_datatype::norm_landmark_name);
     
-    shared_memory_object::remove(shm_name);
+    boost::interprocess::shared_memory_object::remove(landmarks_datatype::shm_name);
 }
 
 void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
 {
 #ifdef PRINT_SHM_LANDMARKS
-    using namespace boost::interprocess;
     //Open the managed segment
-    managed_shared_memory segment(open_copy_on_write, shm_name);
+    boost::interprocess::managed_shared_memory segment(
+      boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
 
-  //Find the vector using the c-string name
-    normLand3d_t *normLand3d;
-    normLand3d = segment.find<normLand3d_t>(norm_landmark_name).first;
+    //Find the vector using the c-string name
+    landmarks_datatype::normLand3d_t *normLand3d = segment.find<landmarks_datatype::normLand3d_t>(
+      landmarks_datatype::norm_landmark_name).first;
 
-    int normLand3d_size = segment.find<normLand3d_t>(norm_landmark_name).second;
+    int normLand3d_size = segment.find<landmarks_datatype::normLand3d_t>(
+        landmarks_datatype::norm_landmark_name).second;
 
     std::puts("In print_shm_norm_landmarks");
     std::printf("normLand3d size: %d adress: %p\n", normLand3d_size, normLand3d);
 
-    for(int i=0; i<norm_landmark_size; i++){
-        std::printf("normLand3d: %d = (%f, %f, %f)\n", i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
+    for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+        std::printf("normLand3d: %d = (%f, %f, %f)\n",
+         i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
     }
 #endif
 }
 
-void landmarks_to_shm::shm::get_normLandVector(landmarks_to_shm::normLand3d_t **normLand3d)
+void landmarks_to_shm::shm::get_normLandVector(landmarks_datatype::normLand3d_t **normLand3d)
 {
-    using namespace boost::interprocess;
-
     //Open the managed segment
-    managed_shared_memory segment(open_copy_on_write, shm_name);
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    *normLand3d = segment.find<normLand3d_t>(norm_landmark_name).first;
+    *normLand3d = segment.find<landmarks_datatype::normLand3d_t>(
+        landmarks_datatype::norm_landmark_name).first;
 
 #ifdef PRINT_DEBUG
     std::puts("In get_normLandVector");
