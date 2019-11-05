@@ -125,7 +125,7 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
 
   //Open the managed segment
   boost::interprocess::managed_shared_memory segment(
-    boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
+    boost::interprocess::open_or_create, landmarks_datatype::shm_name, landmarks_datatype::norm_landmark_shm_size);
 
   //Find the vector using the c-string name
   landmarks_datatype::normLand3d_t *normLand3d;
@@ -167,6 +167,7 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
     normLand3d[normLand3d_counter++] = {new_landmark.x(), new_landmark.y(), new_landmark.z()};
 /*
   #ifdef PRINT_DEBUG
+    std::puts("Insert");
     std::printf("normLand3d: %d = (%f, %f, %f)\n", normLand3d_counter-1, normLand3d[normLand3d_counter-1].x, normLand3d[normLand3d_counter-1].y, normLand3d[normLand3d_counter-1].z);
   #endif
 */
@@ -193,7 +194,7 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
 
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
           std::printf("normLand3d: %d = (%f, %f, %f)\n",
-           i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
+           i, normLand3d_test[i].x, normLand3d_test[i].y, normLand3d_test[i].z);
     }
   */
 /*******************************************************************/
