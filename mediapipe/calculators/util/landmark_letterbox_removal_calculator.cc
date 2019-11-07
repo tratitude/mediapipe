@@ -128,10 +128,10 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
     boost::interprocess::open_or_create, landmarks_datatype::shm_name, landmarks_datatype::norm_landmark_shm_size);
 
   //Find the vector using the c-string name
-  landmarks_datatype::normLand3d_t *normLand3d;
-  normLand3d = segment.find<landmarks_datatype::normLand3d_t>(
+  landmarks_datatype::coordinate3d_t *normLand3d;
+  normLand3d = segment.find<landmarks_datatype::coordinate3d_t>(
     landmarks_datatype::norm_landmark_name).first;
-  int normLand3d_size = segment.find<landmarks_datatype::normLand3d_t>(
+  int normLand3d_size = segment.find<landmarks_datatype::coordinate3d_t>(
     landmarks_datatype::norm_landmark_name).second;
 
 #ifdef PRINT_DEBUG
@@ -189,7 +189,7 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
       boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    landmarks_datatype::normLand3d_t *normLand3d_test = segment_test.find<landmarks_datatype::normLand3d_t>(
+    landmarks_datatype::coordinate3d_t *normLand3d_test = segment_test.find<landmarks_datatype::coordinate3d_t>(
       landmarks_datatype::norm_landmark_name).first;
 
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){

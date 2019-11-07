@@ -15,9 +15,9 @@ landmarks_to_shm::shm::shm(void)
         landmarks_datatype::shm_name, 
         landmarks_datatype::norm_landmark_shm_size);
 
-    //Construct a vector named "normLand3d_t" in shared memory with argument alloc_inst
-    landmarks_datatype::normLand3d_t *normLand3d = 
-        segment.construct<landmarks_datatype::normLand3d_t>(
+    //Construct a vector named "coordinate3d_t" in shared memory with argument alloc_inst
+    landmarks_datatype::coordinate3d_t *normLand3d = 
+        segment.construct<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name)
         [landmarks_datatype::norm_landmark_size]();
 
@@ -35,12 +35,12 @@ landmarks_to_shm::shm::~shm()
         landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    landmarks_datatype::normLand3d_t *arr = 
-        segment.find<landmarks_datatype::normLand3d_t>(
+    landmarks_datatype::coordinate3d_t *arr = 
+        segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).first;
 
     //When done, destroy the vector from the segment
-    segment.destroy<landmarks_datatype::normLand3d_t>(
+    segment.destroy<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name);
     
     boost::interprocess::shared_memory_object::remove(
@@ -60,12 +60,12 @@ void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
       landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    landmarks_datatype::normLand3d_t *normLand3d = 
-        segment.find<landmarks_datatype::normLand3d_t>(
+    landmarks_datatype::coordinate3d_t *normLand3d = 
+        segment.find<landmarks_datatype::coordinate3d_t>(
       landmarks_datatype::norm_landmark_name).first;
 
     int normLand3d_size = 
-        segment.find<landmarks_datatype::normLand3d_t>(
+        segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).second;
 
     std::puts("In print_shm_norm_landmarks");
@@ -80,7 +80,7 @@ void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
 }
 
 void landmarks_to_shm::shm::get_normLandVector(
-    landmarks_datatype::normLand3d_t **normLand3d)
+    landmarks_datatype::coordinate3d_t **normLand3d)
 {
     //Open the managed segment
   boost::interprocess::managed_shared_memory segment(
@@ -89,7 +89,7 @@ void landmarks_to_shm::shm::get_normLandVector(
     landmarks_datatype::norm_landmark_shm_size);
 
     //Find the vector using the c-string name
-    *normLand3d = segment.find<landmarks_datatype::normLand3d_t>(
+    *normLand3d = segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).first;
 
 #ifdef PRINT_DEBUG
@@ -142,11 +142,11 @@ void landmarks_to_shm::gesture::store_gesture(int gesture_num)
         landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    landmarks_datatype::normLand3d_t *normLand3d = 
-        segment.find<landmarks_datatype::normLand3d_t>(
+    landmarks_datatype::coordinate3d_t *normLand3d = 
+        segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).first;
 
-    int normLand3d_size = segment.find<landmarks_datatype::normLand3d_t>(
+    int normLand3d_size = segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).second;
     
     for(int i=0; i<normLand3d_size; i++){

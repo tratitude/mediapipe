@@ -17,7 +17,7 @@ namespace landmarks_to_shm{
     public:
         shm(void);
         ~shm();
-        void get_normLandVector(landmarks_datatype::normLand3d_t**);
+        void get_normLandVector(landmarks_datatype::coordinate3d_t**);
         void print_shm_norm_landmarks(void);
     };
 

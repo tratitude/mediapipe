@@ -6,43 +6,43 @@
 //#define THREE_D
 
 namespace landmarks_datatype{
-    struct normLand3d_t{
+    struct coordinate3d_t{
         float x, y, z;
 
-        normLand3d_t(float _x = 0.0, float _y = 0.0, float _z = 0.0)
+        coordinate3d_t(float _x = 0.0, float _y = 0.0, float _z = 0.0)
             :x(_x), y(_y), z(_z){}
     #ifndef THREE_D
-        bool operator==(const normLand3d_t p)
+        bool operator==(const coordinate3d_t p)
         {
             return (x==p.x && y==p.y);
         }
 
-        normLand3d_t& operator=(const normLand3d_t &p)
+        coordinate3d_t& operator=(const coordinate3d_t &p)
         {
             x = p.x; y = p.y;
             return *this;
         }
 
-        normLand3d_t operator+(const normLand3d_t &p) const
+        coordinate3d_t operator+(const coordinate3d_t &p) const
         {
-            return normLand3d_t(x+p.x, y+p.y, 0);
+            return coordinate3d_t(x+p.x, y+p.y, 0);
         }
 
-        normLand3d_t operator-(const normLand3d_t &p) const
+        coordinate3d_t operator-(const coordinate3d_t &p) const
         {
-            return normLand3d_t(x-p.x, y-p.y, 0);
+            return coordinate3d_t(x-p.x, y-p.y, 0);
         }
 
         // inner product
-        normLand3d_t operator*(const normLand3d_t &p) const
+        coordinate3d_t operator*(const coordinate3d_t &p) const
         {
-            return normLand3d_t(x*p.x, y*p.y, 0);
+            return coordinate3d_t(x*p.x, y*p.y, 0);
         }
 
         // scalar multiplication
-        normLand3d_t operator*(const float c) const
+        coordinate3d_t operator*(const float c) const
         {
-            return normLand3d_t(x*c, y*c, 0);
+            return coordinate3d_t(x*c, y*c, 0);
         }
 
         float distance(void)
@@ -50,37 +50,37 @@ namespace landmarks_datatype{
             return (sqrtf(x*x + y*y));
         }
     #elif
-        bool operator==(const normLand3d_t p)
+        bool operator==(const coordinate3d_t p)
         {
             return (x==p.x && y==p.y && z==p.z);
         }
 
-        normLand3d_t& operator=(const normLand3d_t &p)
+        coordinate3d_t& operator=(const coordinate3d_t &p)
         {
             x = p.x; y = p.y; z = p.z;
             return *this;
         }
 
-        normLand3d_t operator+(const normLand3d_t &p) const
+        coordinate3d_t operator+(const coordinate3d_t &p) const
         {
-            return normLand3d_t(x+p.x, y+p.y, z+p.z);
+            return coordinate3d_t(x+p.x, y+p.y, z+p.z);
         }
 
-        normLand3d_t operator-(const normLand3d_t &p) const
+        coordinate3d_t operator-(const coordinate3d_t &p) const
         {
-            return normLand3d_t(x-p.x, y-p.y, z-p.z);
+            return coordinate3d_t(x-p.x, y-p.y, z-p.z);
         }
 
         // inner product
-        normLand3d_t operator*(const normLand3d_t &p) const
+        coordinate3d_t operator*(const coordinate3d_t &p) const
         {
-            return normLand3d_t(x*p.x, y*p.y, z*p.z);
+            return coordinate3d_t(x*p.x, y*p.y, z*p.z);
         }
 
         // scalar multiplication
-        normLand3d_t operator*(const float c) const
+        coordinate3d_t operator*(const float c) const
         {
-            return normLand3d_t(x*c, y*c, z*c);
+            return coordinate3d_t(x*c, y*c, z*c);
         }
 
         float distance(void)
