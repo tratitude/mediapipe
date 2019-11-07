@@ -1,4 +1,7 @@
 #include <iostream>
+#include <unistd.h>
+#include <string>
+#include <fstream>
 #include "landmarks_to_shm.h"
 
 landmarks_to_shm::shm::shm(void)
@@ -77,4 +80,61 @@ void landmarks_to_shm::shm::get_normLandVector(landmarks_datatype::normLand3d_t 
     std::puts("In get_normLandVector");
     std::printf("normLand3d adress: %p\n", *normLand3d);
 #endif
+}
+
+//****************************************************
+
+landmarks_to_shm::gesture::gesture(void)
+{
+}
+
+landmarks_to_shm::gesture::~gesture()
+{
+
+}
+
+void landmarks_to_shm::gesture::store_gesture(void)
+{
+    std::puts("Press 'd' to define gesture, press 'q' to quit");
+    for(int i=0; i<gesture_num; i++){
+        std::printf("num: %d gesture\n", i);
+        char input_signal;
+        while(std::cin >> input_signal){
+            if(input_signal == 'd'){
+                std::string gesture_name;
+                std::cin >> gesture_name;
+                
+                std::ofstream gesture_file(std::to_string(i)+".gesture");
+
+                //Open the managed segment
+                boost::interprocess::managed_shared_memory segment(
+                boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
+
+                //Find the vector using the c-string name
+                landmarks_datatype::normLand3d_t *normLand3d = segment.find<landmarks_datatype::normLand3d_t>(
+                landmarks_datatype::norm_landmark_name).first;
+
+                int normLand3d_size = segment.find<landmarks_datatype::normLand3d_t>(
+                    landmarks_datatype::norm_landmark_name).second;
+                
+                for(int i=0; i<normLand3d_size; i++){
+                    gesture_file << i << " " << normLand3d[i].x << " "
+                    << normLand3d[i].y << " " << normLand3d[i].z << "\n";
+
+                    std::cout << i << " " << normLand3d[i].x << " "
+                    << normLand3d[i].y << " " << normLand3d[i].z << "\n";
+                }
+
+                gesture_file << gesture_name << "\n";
+                std::cout << gesture_name << "\n";
+
+                gesture_file.close();
+            }
+            else if(input_signal == 'q'){
+                break;
+            }
+            
+        }
+    }
+    //sleep(10);
 }

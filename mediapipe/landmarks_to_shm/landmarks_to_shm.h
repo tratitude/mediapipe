@@ -20,6 +20,15 @@ namespace landmarks_to_shm{
         void get_normLandVector(landmarks_datatype::normLand3d_t**);
         void print_shm_norm_landmarks(void);
     };
+
+    class gesture{
+    public:
+        gesture(void);
+        void store_gesture(void);
+        void similarity(void);
+        ~gesture();
+        const int gesture_num = 32;
+    };
 }
 
 #endif
