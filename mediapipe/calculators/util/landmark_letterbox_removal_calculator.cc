@@ -165,12 +165,12 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
 *update normLand3d
 ********************************************************************/
     normLand3d[normLand3d_counter++] = {new_landmark.x(), new_landmark.y(), new_landmark.z()};
-/*
+
   #ifdef PRINT_DEBUG
     std::puts("Insert");
-    std::printf("normLand3d: %d = (%f, %f, %f)\n", normLand3d_counter-1, normLand3d[normLand3d_counter-1].x, normLand3d[normLand3d_counter-1].y, normLand3d[normLand3d_counter-1].z);
+    std::printf("normLand3d: %d = (%f, %f, %f)\n", normLand3d_counter-1, new_landmark.x(), new_landmark.y(), new_landmark.z());
   #endif
-*/
+
 /*******************************************************************/
     }
 

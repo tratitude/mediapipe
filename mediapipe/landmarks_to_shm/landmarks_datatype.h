@@ -11,18 +11,19 @@ namespace landmarks_datatype{
 
         coordinate3d_t(float _x = 0.0, float _y = 0.0, float _z = 0.0)
             :x(_x), y(_y), z(_z){}
-    #ifndef THREE_D
+
         bool operator==(const coordinate3d_t p)
         {
-            return (x==p.x && y==p.y);
+            return (x==p.x && y==p.y && z==p.z);
         }
 
         coordinate3d_t& operator=(const coordinate3d_t &p)
         {
-            x = p.x; y = p.y;
+            x = p.x; y = p.y; z = p.z;
             return *this;
         }
-
+        
+    #ifndef THREE_D
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
             return coordinate3d_t(x+p.x, y+p.y, 0);
@@ -50,17 +51,6 @@ namespace landmarks_datatype{
             return (sqrtf(x*x + y*y));
         }
     #elif
-        bool operator==(const coordinate3d_t p)
-        {
-            return (x==p.x && y==p.y && z==p.z);
-        }
-
-        coordinate3d_t& operator=(const coordinate3d_t &p)
-        {
-            x = p.x; y = p.y; z = p.z;
-            return *this;
-        }
-
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
             return coordinate3d_t(x+p.x, y+p.y, z+p.z);
