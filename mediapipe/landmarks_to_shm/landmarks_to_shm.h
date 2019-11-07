@@ -25,6 +25,7 @@ namespace landmarks_to_shm{
     public:
         gesture(void);
         void store_gesture(void);
+        void store_gesture(int gesture_num);
         void similarity(void);
         ~gesture();
         const int gesture_num = 32;

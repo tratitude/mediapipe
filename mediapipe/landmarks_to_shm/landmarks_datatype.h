@@ -3,6 +3,14 @@
 namespace landmarks_datatype{
     struct normLand3d_t{
         float x, y, z;
+
+        normLand3d_t(float _x = 0.0, float _y = 0.0, float _z = 0.0)
+            :x(_x), y(_y), z(_z){}
+
+        bool operator==(const normLand3d_t n)
+        {
+            return (x==n.x && y==n.y && z==n.z);
+        }
     };
 
     struct letterbox_t{
