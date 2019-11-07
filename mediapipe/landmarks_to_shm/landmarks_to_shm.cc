@@ -112,7 +112,7 @@ landmarks_to_shm::gesture::~gesture()
 void landmarks_to_shm::gesture::store_gesture(void)
 {
     std::puts("Press 'd' to define gesture, press'c' to change specific gesture, press 'q' to quit");
-    for(int i=0; i<gesture_num; i++){
+    for(int i=0; i<gesture_max_num; i++){
         
         char input_signal;
         std::cin >> input_signal;

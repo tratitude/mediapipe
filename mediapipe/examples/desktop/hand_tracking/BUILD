@@ -40,3 +40,12 @@ cc_binary(
         "//mediapipe/graphs/hand_tracking:mobile_calculators",
     ],
 )
+
+# [new hand_tracking example](https://github.com/google/mediapipe/issues/200#issuecomment-549168443)
+cc_binary(
+    name = "hand_tracking_out_cpu",
+    deps = [
+        "//mediapipe/examples/desktop:demo_run_graph_main_out",
+        "//mediapipe/graphs/hand_tracking:desktop_tflite_calculators",
+    ],
+)

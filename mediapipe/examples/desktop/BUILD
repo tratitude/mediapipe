@@ -72,3 +72,23 @@ cc_library(
         "//mediapipe/gpu:gpu_shared_data_internal",
     ],
 )
+
+# [new hand_tracking example](https://github.com/google/mediapipe/issues/200#issuecomment-549168443)
+cc_library(
+    name = "demo_run_graph_main_out",
+    srcs = ["demo_run_graph_main_out.cc"],
+    deps = [
+        "//mediapipe/calculators/util:landmarks_to_render_data_calculator",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/framework/formats:image_frame_opencv",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/port:commandlineflags",
+        "//mediapipe/framework/port:file_helpers",
+        "//mediapipe/framework/port:opencv_highgui",
+        "//mediapipe/framework/port:opencv_imgproc",
+        "//mediapipe/framework/port:opencv_video",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+    ],
+)
