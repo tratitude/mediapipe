@@ -191,6 +191,11 @@ void landmarks_to_shm::gesture::load_gesture(std::string dir)
         std::getline(gesture_file, s);
         gestures[i].name = s;
 
+        for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
+            gestures[i].co[j] = gestures[i].co[j] * (image_size);
+        }
+        rotate2d(gestures[i].co);
+
         gesture_file.close();
     }
 }
@@ -207,6 +212,109 @@ void landmarks_to_shm::gesture::print_gestures(void)
         for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
             std::cout << gestures[i].co[j].x << " " << gestures[i].co[j].y <<
                 " " << gestures[i].co[j].z << "\n";
+        }
+    }
+}
+
+void landmarks_to_shm::gesture::similarity(void)
+{
+    //Open the managed segment
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_copy_on_write, 
+        landmarks_datatype::shm_name);
+
+    //Find the vector using the c-string name
+    landmarks_datatype::coordinate3d_t *normLand3d = 
+        segment.find<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::norm_landmark_name).first;
+
+}
+
+void landmarks_to_shm::gesture::similarity(landmarks_datatype::coordinate3d_t* norm_landmark)
+{
+    for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+        norm_landmark[i] = norm_landmark[i] * image_size;
+    }
+#ifdef PRINT_DEBUG
+    std::puts("similarity, after resized to full image: norm_landmark");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  norm_landmark[i].x << " " << 
+            norm_landmark[i].y << " " << norm_landmark[i].z << "\n";
+    }
+#endif
+
+    rotate2d(norm_landmark);
+#ifdef PRINT_DEBUG
+    std::puts("similarity, after rotate2d: norm_landmark");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  norm_landmark[i].x << " " << 
+            norm_landmark[i].y << " " << norm_landmark[i].z << "\n";
+    }
+#endif
+    // shm
+    uint32_t match_gesture = 0;
+
+    int max_gesture = 0;
+    float max_similarity = 0.f;
+
+    for(int i=0; i<gesture_num; i++){
+        float avg_sim = 0.f;
+        for(int j=1; j<landmarks_datatype::norm_landmark_size; j++){
+            float inner = (gestures[i].co[j] * norm_landmark[j]).distance();
+            float product = gestures[i].co[j].distance()*norm_landmark[j].distance();
+            avg_sim +=  inner / product;
+        /*
+        #ifdef PRINT_DEBUG
+            std::puts("similarity: inner, product");
+            std::cout << inner << " " << product << "\n";
+        #endif
+        */
+        }
+    /*
+    #ifdef PRINT_DEBUG
+        std::puts("similarity: avg_sim");
+        std::cout << avg_sim << "\n";
+    #endif
+    */
+        if(avg_sim > max_similarity){
+            max_similarity = avg_sim;
+            max_gesture = i;
+        }
+    }
+    if(max_similarity < similarity_lowbound * landmarks_datatype::norm_landmark_size){
+        match_gesture = 0;
+    }
+    else{
+        match_gesture = 1 << max_gesture;
+    }
+#ifdef PRINT_DEBUG
+    std::puts("similarity: match_gesture");
+    std::cout << match_gesture << "\n";
+    std::puts("similarity: average similarity");
+    std::cout << max_similarity/21 << "\n";
+#endif
+}
+
+void landmarks_to_shm::gesture::rotate2d(
+    landmarks_datatype::coordinate3d_t* norm_landmark)
+{
+    const landmarks_datatype::coordinate3d_t p0 = norm_landmark[start_keypoint_index_];
+    const landmarks_datatype::coordinate3d_t p1 = norm_landmark[end_keypoint_index_];
+    float rotation_angle = target_angle_ - std::atan2(-(p1.y - p0.y), p1.x - p0.x);
+    rotation_angle = NormalizeRadians(rotation_angle);
+
+    const landmarks_datatype::coordinate3d_t root = norm_landmark[start_keypoint_index_];
+    for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+        if(!i){
+            norm_landmark[i] = {0.f, 0.f};
+        }
+        else{
+            const float cosine = cosf(rotation_angle);
+            const float sine = sinf(rotation_angle);
+            const landmarks_datatype::coordinate3d_t vec = norm_landmark[i] - root;
+            
+            // rotate clockwise
+            norm_landmark[i] = {cosine*vec.x - sine*vec.y, cosine*vec.y + sine*vec.x};
         }
     }
 }

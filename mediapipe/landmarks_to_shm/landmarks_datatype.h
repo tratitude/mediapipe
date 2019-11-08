@@ -3,8 +3,10 @@
 
 #include <cmath>
 #include <string>
+#include <limits>
 
 //#define THREE_D
+#define FLOAT_MIN 1e-10
 
 namespace landmarks_datatype{
     struct coordinate3d_t{
@@ -49,7 +51,12 @@ namespace landmarks_datatype{
 
         float distance(void)
         {
-            return (sqrtf(x*x + y*y));
+            float total = 0.f;
+            if(fabs(x) > FLOAT_MIN)
+                total += x*x;
+            if(fabs(y) > FLOAT_MIN)
+                total += y*y;
+            return (sqrtf(total));
         }
     #elif
         coordinate3d_t operator+(const coordinate3d_t &p) const

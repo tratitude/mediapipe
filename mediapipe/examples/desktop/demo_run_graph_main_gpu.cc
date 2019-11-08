@@ -37,6 +37,7 @@
 #include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
 
 #include <iostream>
+#include <thread>
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
@@ -52,7 +53,12 @@ DEFINE_string(input_video_path, "",
 DEFINE_string(output_video_path, "",
               "Full path of where to save result (.mp4 only). "
               "If not provided, show result in a window.");
-
+//****************************************************************************************/
+// Warring! Global varible
+landmarks_to_shm::shm shmObj;
+landmarks_to_shm::gesture gesObj;
+//landmarks_datatype::coordinate3d_t norm_landmark[21];
+//****************************************************************************************/
 ::mediapipe::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
   MP_RETURN_IF_ERROR(mediapipe::file::GetContents(
@@ -184,21 +190,25 @@ DEFINE_string(output_video_path, "",
       const int pressed_key = cv::waitKey(5);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
-
-    // restore landmark to array
+  
+    // restore landmark to shm array
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_only, 
-        landmarks_datatype::shm_name);
+        boost::interprocess::open_or_create, 
+        landmarks_datatype::shm_name,
+        landmarks_datatype::norm_landmark_shm_size);
 
     //Find the vector using the c-string name
     landmarks_datatype::coordinate3d_t *norm_landmark = 
         segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).first;
-    int counter = 0;
-    for (const ::mediapipe::NormalizedLandmark& landmark : output_landmarks) {
-      norm_landmark[counter] = {landmark.x(), landmark.y(), landmark.z()};
+    for (int counter = 0; counter<landmarks_datatype::norm_landmark_size; counter++) {
+      norm_landmark[counter] = {output_landmarks[counter].x(), output_landmarks[counter].y(), output_landmarks[counter].z()};
     }
+    
+    // norm_landmark is global var
+    // shmObj, gesObj is global object
+    gesObj.similarity(norm_landmark);
   }
 
   LOG(INFO) << "Shutting down.";
@@ -208,10 +218,12 @@ DEFINE_string(output_video_path, "",
 }
 
 int main(int argc, char** argv) {
-  landmarks_to_shm::shm shm;
-  landmarks_to_shm::gesture ges;
-  ges.load_gesture("/home/fdmdkw/code/project/mediapipe/store_gesture/");
-  ges.print_gestures();
+  // ges, shm are global object
+  gesObj.load_gesture("/home/fdmdkw/code/project/mediapipe/store_gesture/");
+  gesObj.print_gestures();
+
+  // maybe need run similarity after getting landmark every frame
+  //std::thread similarity(&landmarks_to_shm::gesture::similarity, &ges);
 
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -221,5 +233,8 @@ int main(int argc, char** argv) {
   } else {
     LOG(INFO) << "Success!";
   }
+
+  //similarity.join();
+
   return 0;
 }
