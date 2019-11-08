@@ -71,6 +71,7 @@ cc_library(
         "//mediapipe/gpu:gl_calculator_helper",
         "//mediapipe/gpu:gpu_buffer",
         "//mediapipe/gpu:gpu_shared_data_internal",
+        "//mediapipe/landmarks_to_shm:landmarks_to_shm",
     ],
 )
 

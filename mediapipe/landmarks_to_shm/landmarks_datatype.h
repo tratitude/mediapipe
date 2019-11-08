@@ -2,6 +2,7 @@
 #define LANDMARKS_DATATYPE_H
 
 #include <cmath>
+#include <string>
 
 //#define THREE_D
 
@@ -78,6 +79,11 @@ namespace landmarks_datatype{
             return (cbrtf(x*x + y*y + z*z));
         }
     #endif
+    };
+
+    struct gesture_t{
+        coordinate3d_t *co;
+        std::string name;
     };
 
     struct letterbox_t{

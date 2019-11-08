@@ -34,6 +34,8 @@
 #include "mediapipe/calculators/util/landmarks_to_render_data_calculator.pb.h"
 #include "mediapipe/framework/formats/landmark.pb.h"
 
+#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
+
 #include <iostream>
 
 constexpr char kInputStream[] = "input_video";
@@ -182,9 +184,20 @@ DEFINE_string(output_video_path, "",
       const int pressed_key = cv::waitKey(5);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
-    // printout landmark values
+
+    // restore landmark to array
+    //Open the managed segment
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_only, 
+        landmarks_datatype::shm_name);
+
+    //Find the vector using the c-string name
+    landmarks_datatype::coordinate3d_t *norm_landmark = 
+        segment.find<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::norm_landmark_name).first;
+    int counter = 0;
     for (const ::mediapipe::NormalizedLandmark& landmark : output_landmarks) {
-          std::cout << landmark.x()*256 << " " << landmark.y()*256 << " " << landmark.z() << std::endl;
+      norm_landmark[counter] = {landmark.x(), landmark.y(), landmark.z()};
     }
   }
 
@@ -195,6 +208,11 @@ DEFINE_string(output_video_path, "",
 }
 
 int main(int argc, char** argv) {
+  landmarks_to_shm::shm shm;
+  landmarks_to_shm::gesture ges;
+  ges.load_gesture("/home/fdmdkw/code/project/mediapipe/store_gesture/");
+  ges.print_gestures();
+
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   ::mediapipe::Status run_status = RunMPPGraph();

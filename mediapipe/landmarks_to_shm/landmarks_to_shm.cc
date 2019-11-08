@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include "landmarks_to_shm.h"
 
 landmarks_to_shm::shm::shm(void)
@@ -53,7 +54,6 @@ landmarks_to_shm::shm::~shm()
 
 void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
 {
-#ifdef PRINT_SHM_LANDMARKS
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
       boost::interprocess::open_copy_on_write, 
@@ -76,7 +76,6 @@ void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
           std::printf("normLand3d: %d = (%f, %f, %f)\n",
            i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
     }
-#endif
 }
 
 void landmarks_to_shm::shm::get_normLandVector(
@@ -102,6 +101,8 @@ void landmarks_to_shm::shm::get_normLandVector(
 
 landmarks_to_shm::gesture::gesture(void)
 {
+    gesture_num = 6; //init_gesture_num();
+    gestures = new landmarks_datatype::gesture_t [gesture_num];
 }
 
 landmarks_to_shm::gesture::~gesture()
@@ -128,7 +129,7 @@ void landmarks_to_shm::gesture::store_gesture(void)
             break;
         }
     }
-    //sleep(10);
+    init_gesture_num();
 }
 
 void landmarks_to_shm::gesture::store_gesture(int gesture_num)
@@ -166,4 +167,46 @@ void landmarks_to_shm::gesture::store_gesture(int gesture_num)
     gesture_file << gesture_name << "\n";
 
     gesture_file.close();
+}
+
+void landmarks_to_shm::gesture::load_gesture(std::string dir)
+{
+    for(int i=0; i<gesture_num; i++){
+        std::ifstream gesture_file(dir + std::to_string(i)+".gesture");
+        if(!gesture_file){
+            std::puts("file open error");
+            break;
+        }
+        std::string s;
+
+        gestures[i].co = new landmarks_datatype::coordinate3d_t [landmarks_datatype::norm_landmark_size];
+
+        for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
+            std::getline(gesture_file, s);
+            std::istringstream ss(s);
+            int index;
+
+            ss >> index >> gestures[i].co[j].x >> gestures[i].co[j].y >> gestures[i].co[j].z;
+        }
+        std::getline(gesture_file, s);
+        gestures[i].name = s;
+
+        gesture_file.close();
+    }
+}
+
+void landmarks_to_shm::gesture::init_gesture_num(void)
+{
+
+}
+
+void landmarks_to_shm::gesture::print_gestures(void)
+{
+    for(int i=0; i<gesture_num; i++){
+        std::cout << i << " : " << gestures[i].name << "\n";
+        for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
+            std::cout << gestures[i].co[j].x << " " << gestures[i].co[j].y <<
+                " " << gestures[i].co[j].z << "\n";
+        }
+    }
 }
