@@ -9,7 +9,7 @@
 
 //#define PRINT_LANDMARKS
 //#define PRINT_LETTERBOX
-#define PRINT_SHM_LANDMARKS
+//#define PRINT_SHM_LANDMARKS
 //#define PRINT_DEBUG
 
 namespace landmarks_to_shm{

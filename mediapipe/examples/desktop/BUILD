@@ -57,6 +57,7 @@ cc_library(
     name = "demo_run_graph_main_gpu",
     srcs = ["demo_run_graph_main_gpu.cc"],
     deps = [
+        "//mediapipe/calculators/util:landmarks_to_render_data_calculator",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame",
         "//mediapipe/framework/formats:image_frame_opencv",
