@@ -18,12 +18,11 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "tensorflow/lite/interpreter.h"
 
-//#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
-
 namespace mediapipe {
 
 // A calculator for converting TFLite tensors from regression models into
-// landmarks.
+// landmarks. Note that if the landmarks in the tensor has more than 3
+// dimensions, only the first 3 dimensions will be converted to x,y,z.
 //
 // Input:
 //  TENSORS - Vector of TfLiteTensor of type kTfLiteFloat32. Only the first
@@ -124,29 +123,11 @@ REGISTER_CALCULATOR(TfLiteTensorsToLandmarksCalculator);
     num_values *= raw_tensor->dims->data[i];
   }
   const int num_dimensions = num_values / num_landmarks_;
-  // Landmarks must have less than 3 dimensions. Otherwise please consider
-  // using matrix.
-  CHECK_LE(num_dimensions, 3);
   CHECK_GT(num_dimensions, 0);
 
   const float* raw_landmarks = raw_tensor->data.f;
 
   auto output_landmarks = absl::make_unique<std::vector<Landmark>>();
-
-/*********************************************************************
-Todo: get landmarks
-        float landmarks.x()
-        float landmarks.y()
-        float landmarks.z()
-      need check or not ?
-      output_landmarks or normalized_landmarks or absolute_landmarks ?
-*********************************************************************/
-  /*static landmarks_to_shm::landmarks landmarks_shm;
-  landmarks_shm.norm_landmarks.clear();
-  landmarks_shm.norm_landmarks.shrink_to_fit();
-  landmarks_shm.landmarks.clear();
-  landmarks_shm.landmarks.clear();*/
-/********************************************************************/
 
   for (int ld = 0; ld < num_landmarks_; ++ld) {
     const int offset = ld * num_dimensions;
@@ -168,11 +149,6 @@ Todo: get landmarks
     if (num_dimensions > 2) {
       landmark.set_z(raw_landmarks[offset + 2]);
     }
-/********************************************************************
-push_back landmarks
-********************************************************************/
-    //landmarks_shm.landmarks.push_back(landmark);
-/*******************************************************************/
     output_landmarks->push_back(landmark);
   }
 
@@ -189,11 +165,6 @@ push_back landmarks
       norm_landmark.set_z(landmark.z() / options_.normalize_z());
 
       output_norm_landmarks->push_back(norm_landmark);
-/********************************************************************
-push_back norm_landmarks
-********************************************************************/
-      //landmarks_shm.norm_landmarks.push_back(norm_landmark);
-/*******************************************************************/
     }
     cc->Outputs()
         .Tag("NORM_LANDMARKS")
@@ -205,12 +176,7 @@ push_back norm_landmarks
         .Tag("LANDMARKS")
         .Add(output_landmarks.release(), cc->InputTimestamp());
   }
-/********************************************************************
-print landmarks
-********************************************************************/
-  //landmarks_shm.print_norm_landmarks();
-  //landmarks_shm.print_landmarks();
-/*******************************************************************/
+
   return ::mediapipe::OkStatus();
 }
 

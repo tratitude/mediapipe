@@ -33,12 +33,6 @@
 #include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/framework/port/ret_check.h"
 
-#include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
-
-#ifdef PRINT_DEBUG
-  #include <iostream>
-#endif
-
 namespace mediapipe {
 
 namespace {
@@ -112,44 +106,6 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
 
     auto output_landmarks =
         absl::make_unique<std::vector<NormalizedLandmark>>();
-
-/*********************************************************************
-*Todo: get landmarks
-*        float landmarks.x()
-*        float landmarks.y()
-*        float landmarks.z()
-*      need check or not ?
-*      output_landmarks or normalized_landmarks or absolute_landmarks ?
-*********************************************************************/
-  static landmarks_to_shm::shm landmarks_shm;
-
-  //Open the managed segment
-  boost::interprocess::managed_shared_memory segment(
-    boost::interprocess::open_or_create, landmarks_datatype::shm_name, landmarks_datatype::norm_landmark_shm_size);
-
-  //Find the vector using the c-string name
-  landmarks_datatype::coordinate3d_t *normLand3d;
-  normLand3d = segment.find<landmarks_datatype::coordinate3d_t>(
-    landmarks_datatype::norm_landmark_name).first;
-  int normLand3d_size = segment.find<landmarks_datatype::coordinate3d_t>(
-    landmarks_datatype::norm_landmark_name).second;
-
-#ifdef PRINT_DEBUG
-  std::puts("In calculator");
-  std::printf("normLand3d size: %d adress: %p\n", normLand3d_size, normLand3d);
-#endif
-/********************************************************************/
-
-/*********************************************************************
-*Todo: get letterbox_padding
-*Issue: if there has value not equal to 0 in letterbox_padding,
-*        will cause
-*I1028 23393 gl_context.cc:630] Found unchecked GL error: GL_INVALID_FRAMEBUFFER_OPERATION
-*W1028 23393 gl_context.cc:651] Ignoring unchecked GL error.
-*********************************************************************/
-
-/********************************************************************/
-    int normLand3d_counter = 0;
     for (const auto& landmark : input_landmarks) {
       NormalizedLandmark new_landmark;
       const float new_x = (landmark.x() - left) / (1.0f - left_and_right);
@@ -161,44 +117,11 @@ class LandmarkLetterboxRemovalCalculator : public CalculatorBase {
       new_landmark.set_z(landmark.z());
 
       output_landmarks->emplace_back(new_landmark);
-/********************************************************************
-*update normLand3d
-********************************************************************/
-    normLand3d[normLand3d_counter++] = {new_landmark.x(), new_landmark.y(), new_landmark.z()};
-
-  #ifdef PRINT_DEBUG
-    std::puts("Insert");
-    std::printf("normLand3d: %d = (%f, %f, %f)\n", normLand3d_counter-1, new_landmark.x(), new_landmark.y(), new_landmark.z());
-  #endif
-
-/*******************************************************************/
     }
 
     cc->Outputs()
         .Tag(kLandmarksTag)
         .Add(output_landmarks.release(), cc->InputTimestamp());
-
-/********************************************************************
-*print shm landmarks
-********************************************************************/
-    // failed, just print 0
-    landmarks_shm.print_shm_norm_landmarks();
-  /*
-    //Open the managed segment
-    boost::interprocess::managed_shared_memory segment_test(
-      boost::interprocess::open_copy_on_write, landmarks_datatype::shm_name);
-
-    //Find the vector using the c-string name
-    landmarks_datatype::coordinate3d_t *normLand3d_test = segment_test.find<landmarks_datatype::coordinate3d_t>(
-      landmarks_datatype::norm_landmark_name).first;
-
-    for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
-          std::printf("normLand3d: %d = (%f, %f, %f)\n",
-           i, normLand3d_test[i].x, normLand3d_test[i].y, normLand3d_test[i].z);
-    }
-  */
-/*******************************************************************/
-
     return ::mediapipe::OkStatus();
   }
 };
