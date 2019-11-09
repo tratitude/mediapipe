@@ -24,7 +24,6 @@ landmarks_to_shm::shm::shm(void)
 
 #ifdef PRINT_DEBUG
     std::puts("In shm");
-    //std::printf("normLand3d adress: %p\n", normLand3d);
 #endif
 }
 
@@ -35,15 +34,6 @@ landmarks_to_shm::shm::~shm()
         boost::interprocess::open_only, 
         landmarks_datatype::shm_name);
 
-    //Find the vector using the c-string name
-    landmarks_datatype::coordinate3d_t *arr = 
-        segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).first;
-
-    //When done, destroy the vector from the segment
-    segment.destroy<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name);
-    
     boost::interprocess::shared_memory_object::remove(
         landmarks_datatype::shm_name);
 
@@ -196,7 +186,7 @@ void landmarks_to_shm::gesture::load_gesture(std::string dir)
         gestures[i].name = s;
 
         for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
-            gestures[i].co[j] = gestures[i].co[j] * (image_size);
+            gestures[i].co[j] = gestures[i].co[j] * image_size;
         }
         rotate2d(gestures[i].co);
 

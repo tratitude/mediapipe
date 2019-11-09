@@ -33,7 +33,9 @@
 // RendererSubgraph - LANDMARKS:hand_landmarks
 #include "mediapipe/calculators/util/landmarks_to_render_data_calculator.pb.h"
 #include "mediapipe/framework/formats/landmark.pb.h"
+// RectToRenderDataCalculator
 // RendererSubgraph - NORM_RECT:hand_rect
+#include "mediapipe/calculators/util/rect_to_render_data_calculator.pb.h"
 #include "mediapipe/framework/formats/rect.pb.h"
 
 #include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
@@ -168,7 +170,7 @@ landmarks_to_shm::gesture gesObj;
 
     std::unique_ptr<mediapipe::ImageFrame> output_frame;
     auto& output_landmarks = landmark_packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
-    auto& output_rect = rect_packet.Get<std::vector<::mediapipe::NormalizedRect>>();
+    auto& output_rect = rect_packet.Get<::mediapipe::NormalizedRect>();
     
     // Convert GpuBuffer to ImageFrame.
     MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
@@ -217,9 +219,7 @@ landmarks_to_shm::gesture gesObj;
     }
   #ifdef PRINT_DEBUG
     std::puts("RunMPPGraph: output_rect");
-    for(int counter = 0; counter < output_rect.size(); counter++){
-      std::cout << counter << " " << output_rect[counter].x_center() << " " << output_rect[counter].y_center() << "\n";
-    }
+    std::cout << output_rect.x_center() * 256 << " " << output_rect.y_center() * 256 << "\n";
   #endif
     // norm_landmark is global var
     // shmObj, gesObj is global object

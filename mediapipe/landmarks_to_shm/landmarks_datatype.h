@@ -29,24 +29,24 @@ namespace landmarks_datatype{
     #ifndef THREE_D
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
-            return coordinate3d_t(x+p.x, y+p.y, 0);
+            return coordinate3d_t(x+p.x, y+p.y, z);
         }
 
         coordinate3d_t operator-(const coordinate3d_t &p) const
         {
-            return coordinate3d_t(x-p.x, y-p.y, 0);
+            return coordinate3d_t(x-p.x, y-p.y, z);
         }
 
         // inner product
         coordinate3d_t operator*(const coordinate3d_t &p) const
         {
-            return coordinate3d_t(x*p.x, y*p.y, 0);
+            return coordinate3d_t(x*p.x, y*p.y, z);
         }
 
         // scalar multiplication
         coordinate3d_t operator*(const float c) const
         {
-            return coordinate3d_t(x*c, y*c, 0);
+            return coordinate3d_t(x*c, y*c, z);
         }
 
         float distance(void)
@@ -83,7 +83,14 @@ namespace landmarks_datatype{
 
         float distance(void)
         {
-            return (cbrtf(x*x + y*y + z*z));
+            float total = 0.f;
+            if(fabs(x) > FLOAT_MIN)
+                total += x*x;
+            if(fabs(y) > FLOAT_MIN)
+                total += y*y;
+            if(fabs(z) > FLOAT_MIN)
+                total += z*z;
+            return (cbrtf(total));
         }
     #endif
     };
