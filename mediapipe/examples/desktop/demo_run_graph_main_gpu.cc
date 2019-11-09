@@ -29,10 +29,12 @@
 #include "mediapipe/gpu/gpu_buffer.h"
 #include "mediapipe/gpu/gpu_shared_data_internal.h"
 
-//Take stream from /mediapipe/graphs/hand_tracking/hand_detection_desktop_live.pbtxt
+//Take stream from /mediapipe/graphs/hand_tracking/hand_tracking_mobile.pbtxt
 // RendererSubgraph - LANDMARKS:hand_landmarks
 #include "mediapipe/calculators/util/landmarks_to_render_data_calculator.pb.h"
 #include "mediapipe/framework/formats/landmark.pb.h"
+// RendererSubgraph - NORM_RECT:hand_rect
+#include "mediapipe/framework/formats/rect.pb.h"
 
 #include "mediapipe/landmarks_to_shm/landmarks_to_shm.h"
 
@@ -43,6 +45,7 @@ constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
 constexpr char kLandmarksStream[] = "hand_landmarks";
+constexpr char kRectStream[] = "hand_rect";
 
 DEFINE_string(
     calculator_graph_config_file, "",
@@ -110,6 +113,10 @@ landmarks_to_shm::gesture gesObj;
   // hand landmarks stream
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_landmark,
             graph.AddOutputStreamPoller(kLandmarksStream));
+  
+  // rect stream
+  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_rect,
+            graph.AddOutputStreamPoller(kRectStream));
 
   MP_RETURN_IF_ERROR(graph.StartRun({}));
 
@@ -153,12 +160,15 @@ landmarks_to_shm::gesture gesObj;
     // Get the graph result packet, or stop if that fails.
     mediapipe::Packet packet;
     mediapipe::Packet landmark_packet;
+    mediapipe::Packet rect_packet;
 
     if (!poller.Next(&packet)) break;
     if (!poller_landmark.Next(&landmark_packet)) break;
+    if (!poller_rect.Next(&rect_packet)) break;
 
     std::unique_ptr<mediapipe::ImageFrame> output_frame;
     auto& output_landmarks = landmark_packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
+    auto& output_rect = rect_packet.Get<std::vector<::mediapipe::NormalizedRect>>();
     
     // Convert GpuBuffer to ImageFrame.
     MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
@@ -205,7 +215,12 @@ landmarks_to_shm::gesture gesObj;
     for (int counter = 0; counter<landmarks_datatype::norm_landmark_size; counter++) {
       norm_landmark[counter] = {output_landmarks[counter].x(), output_landmarks[counter].y(), output_landmarks[counter].z()};
     }
-    
+  #ifdef PRINT_DEBUG
+    std::puts("RunMPPGraph: output_rect");
+    for(int counter = 0; counter < output_rect.size(); counter++){
+      std::cout << counter << " " << output_rect[counter].x_center() << " " << output_rect[counter].y_center() << "\n";
+    }
+  #endif
     // norm_landmark is global var
     // shmObj, gesObj is global object
     gesObj.similarity(norm_landmark);
@@ -219,7 +234,9 @@ landmarks_to_shm::gesture gesObj;
 
 int main(int argc, char** argv) {
   // ges, shm are global object
-  gesObj.load_gesture("../../../store_gesture/");
+  gesObj.load_gesture("/home/fdmdkw/code/project/mediapipe/store_gesture/");
+  // relative path failed
+  //gesObj.load_gesture("../../../store_gesture/");
   gesObj.print_gestures();
 
   // maybe need run similarity after getting landmark every frame

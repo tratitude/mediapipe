@@ -172,12 +172,11 @@ void landmarks_to_shm::gesture::store_gesture(int gesture_num)
 void landmarks_to_shm::gesture::load_gesture(std::string dir)
 {
     for(int i=0; i<gesture_num; i++){
-        dir += std::to_string(i)+".gesture";
     #ifdef PRINT_DEBUG
         std::puts("load_gesture: dir");
-        std::cout << dir << "\n";
+        std::cout << dir + std::to_string(i)+".gesture" << "\n";
     #endif
-        std::ifstream gesture_file(dir);
+        std::ifstream gesture_file(dir + std::to_string(i)+".gesture");
         if(!gesture_file){
             std::perror("load_gesture");
             exit(EXIT_FAILURE);
