@@ -219,7 +219,7 @@ landmarks_to_shm::gesture gesObj;
 
 int main(int argc, char** argv) {
   // ges, shm are global object
-  gesObj.load_gesture("/home/fdmdkw/code/project/mediapipe/store_gesture/");
+  gesObj.load_gesture("../../../store_gesture/");
   gesObj.print_gestures();
 
   // maybe need run similarity after getting landmark every frame
