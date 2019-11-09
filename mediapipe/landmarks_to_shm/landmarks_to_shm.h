@@ -9,7 +9,7 @@
 
 #include "landmarks_datatype.h"
 
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 
 namespace landmarks_to_shm{
     class shm{
@@ -18,6 +18,8 @@ namespace landmarks_to_shm{
         ~shm();
         void get_normLandVector(landmarks_datatype::coordinate3d_t**);
         void print_shm_norm_landmarks(void);
+        void print_shm_bbCentral(void);
+        void print_shm(const char *val_shm_name);
     };
 
     class gesture{
@@ -48,7 +50,6 @@ namespace landmarks_to_shm{
         const float target_angle_ = M_PI * 0.5f;  // In radians.
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
-        const landmarks_datatype::coordinate3d_t image_size = {256.f, 256.f};
     };
 }
 

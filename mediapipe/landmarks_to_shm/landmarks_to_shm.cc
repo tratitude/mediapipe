@@ -15,12 +15,17 @@ landmarks_to_shm::shm::shm(void)
         boost::interprocess::create_only, 
         landmarks_datatype::shm_name, 
         landmarks_datatype::norm_landmark_shm_size);
-
-    //Construct a vector named "coordinate3d_t" in shared memory with argument alloc_inst
+// normLand3d
+    //Construct an array named norm_landmark_name in shared memory
     landmarks_datatype::coordinate3d_t *normLand3d = 
         segment.construct<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name)
         [landmarks_datatype::norm_landmark_size]();
+
+// bbCentral
+    landmarks_datatype::coordinate3d_t *bbCentral = 
+        segment.construct<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::bbCentral_name)[1]();
 
 #ifdef PRINT_DEBUG
     std::puts("In shm");
@@ -29,20 +34,29 @@ landmarks_to_shm::shm::shm(void)
 
 landmarks_to_shm::shm::~shm()
 {
+/*
+    boost::interprocess::shared_memory_object::remove(
+        landmarks_datatype::shm_name);
+*/
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
         boost::interprocess::open_only, 
         landmarks_datatype::shm_name);
 
-    boost::interprocess::shared_memory_object::remove(
-        landmarks_datatype::shm_name);
+    //When done, destroy norm_landmark from the segment
+    segment.destroy<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::norm_landmark_name);
+    
+    //When done, destroy norm_landmark from the segment
+    segment.destroy<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::bbCentral_name);
 
 #ifdef PRINT_DEBUG
     std::puts("In ~shm");
 #endif
 }
 
-void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
+void landmarks_to_shm::shm::print_shm(const char *val_shm_name)
 {
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
@@ -50,22 +64,32 @@ void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
       landmarks_datatype::shm_name);
 
     //Find the vector using the c-string name
-    landmarks_datatype::coordinate3d_t *normLand3d = 
+    landmarks_datatype::coordinate3d_t *val = 
         segment.find<landmarks_datatype::coordinate3d_t>(
-      landmarks_datatype::norm_landmark_name).first;
+        val_shm_name).first;
 
-    int normLand3d_size = 
+    int val_size = 
         segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).second;
-
-    std::puts("In print_shm_norm_landmarks");
-    std::printf("normLand3d size: %d adress: %p\n", 
-        normLand3d_size, normLand3d);
-
-    for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
-          std::printf("normLand3d: %d = (%f, %f, %f)\n",
-           i, normLand3d[i].x, normLand3d[i].y, normLand3d[i].z);
+        val_shm_name).second;
+#ifdef PRINT_DEBUG
+    std::puts("print_shm: val_shm_name, val_size, address");
+    std::printf("%s %d %p\n", val_shm_name, val_size, val);
+#endif
+    std::puts("print_shm: val");
+    for(int i=0; i<val_size; i++){
+          std::printf("%s: %d = (%f, %f, %f)\n",
+           val_shm_name, i, val[i].x, val[i].y, val[i].z);
     }
+}
+
+void landmarks_to_shm::shm::print_shm_norm_landmarks(void)
+{
+    print_shm(landmarks_datatype::norm_landmark_name);
+}
+
+void landmarks_to_shm::shm::print_shm_bbCentral(void)
+{
+    print_shm(landmarks_datatype::bbCentral_name);
 }
 
 void landmarks_to_shm::shm::get_normLandVector(
@@ -186,7 +210,7 @@ void landmarks_to_shm::gesture::load_gesture(std::string dir)
         gestures[i].name = s;
 
         for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
-            gestures[i].co[j] = gestures[i].co[j] * image_size;
+            gestures[i].co[j] = gestures[i].co[j] * landmarks_datatype::image_size;
         }
         rotate2d(gestures[i].co);
 
@@ -227,7 +251,7 @@ void landmarks_to_shm::gesture::similarity(void)
 void landmarks_to_shm::gesture::similarity(landmarks_datatype::coordinate3d_t* norm_landmark)
 {
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
-        norm_landmark[i] = norm_landmark[i] * image_size;
+        norm_landmark[i] = norm_landmark[i] * landmarks_datatype::image_size;
     }
 #ifdef PRINT_DEBUG
     std::puts("similarity, after resized to full image: norm_landmark");

@@ -99,14 +99,13 @@ namespace landmarks_datatype{
         coordinate3d_t *co;
         std::string name;
     };
-
-    struct letterbox_t{
-        float left, top, right, bottom;
-    };
     
     extern const int norm_landmark_size;
     extern const int norm_landmark_shm_size;
     extern const char *norm_landmark_name;
     extern const char *shm_name;
+    extern const char *bbCentral_name;
+    extern const int bbCentral_shm_size;
+    extern const coordinate3d_t image_size;
 }
 #endif

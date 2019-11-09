@@ -217,10 +217,14 @@ landmarks_to_shm::gesture gesObj;
     for (int counter = 0; counter<landmarks_datatype::norm_landmark_size; counter++) {
       norm_landmark[counter] = {output_landmarks[counter].x(), output_landmarks[counter].y(), output_landmarks[counter].z()};
     }
-  #ifdef PRINT_DEBUG
-    std::puts("RunMPPGraph: output_rect");
-    std::cout << output_rect.x_center() * 256 << " " << output_rect.y_center() * 256 << "\n";
-  #endif
+
+    landmarks_datatype::coordinate3d_t *bbCentral = 
+        segment.find<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::bbCentral_name).first;
+    bbCentral[0] = {output_rect.x_center(), output_rect.y_center()};
+    // resize
+    bbCentral[0] = bbCentral[0] * landmarks_datatype::image_size;
+
     // norm_landmark is global var
     // shmObj, gesObj is global object
     gesObj.similarity(norm_landmark);
