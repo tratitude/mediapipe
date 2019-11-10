@@ -223,6 +223,7 @@ landmarks_to_shm::gesture gesObj;
 
     // shmObj, gesObj is global object
     gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
+    
     float match_gesture;
     gesObj.similarity(&match_gesture);
 
