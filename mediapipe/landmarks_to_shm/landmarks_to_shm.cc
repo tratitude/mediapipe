@@ -271,23 +271,6 @@ void landmarks_to_shm::gesture::print_gestures3d(void)
 
 void landmarks_to_shm::gesture::similarity(float *_match_gesture)
 {
-#ifdef PRINT_DEBUG
-    std::puts("similarity, after resized to full image: norm_landmark3d_");
-    for(int i=0; i<21; i++){
-        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
-            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
-    }
-#endif
-
-    rotate(norm_landmark3d_);
-#ifdef PRINT_DEBUG
-    std::puts("similarity, after rotate2d: norm_landmark3d_");
-    for(int i=0; i<21; i++){
-        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
-            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
-    }
-#endif
-
     int max_gesture = 0;
     float max_similarity = 0.f;
 
@@ -331,7 +314,7 @@ void landmarks_to_shm::gesture::rotate(
     const landmarks_datatype::coordinate3d_t p0 = _landmark3d[start_keypoint_index_];
     const landmarks_datatype::coordinate3d_t p1 = _landmark3d[end_keypoint_index_];
     float rotation_angle = target_angle_ - std::atan2(-(p1.y - p0.y), p1.x - p0.x);
-    rotation_angle = NormalizeRadians(rotation_angle);
+    //rotation_angle = NormalizeRadians(rotation_angle);
 
     const landmarks_datatype::coordinate3d_t root = _landmark3d[start_keypoint_index_];
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
@@ -344,7 +327,7 @@ void landmarks_to_shm::gesture::rotate(
             const landmarks_datatype::coordinate3d_t vec = _landmark3d[i] - root;
             
             // rotate clockwise
-            _landmark3d[i] = {cosine*vec.x - sine*vec.y, cosine*vec.y + sine*vec.x};
+            _landmark3d[i] = {cosine*vec.x + sine*vec.y, cosine*vec.y - sine*vec.x};
         }
     }
 }
@@ -382,6 +365,22 @@ void landmarks_to_shm::gesture::load_resize_rotate_norm_landmark3d(
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
         norm_landmark3d_[i] = _shm_norm_landmark3d[i] * landmarks_datatype::image_size;
     }
+#ifdef PRINT_DEBUG
+    std::puts("similarity, after resized to full image: norm_landmark3d_");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
+            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
+    }
+#endif
+
+    rotate(norm_landmark3d_);
+#ifdef PRINT_DEBUG
+    std::puts("similarity, after rotate2d: norm_landmark3d_");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
+            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
+    }
+#endif
 }
 
 void landmarks_to_shm::gesture::resize(
