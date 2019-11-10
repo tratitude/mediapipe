@@ -43,6 +43,8 @@
 #include <iostream>
 #include <thread>
 
+#define IMSHOW_ENABLE
+
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
@@ -62,7 +64,6 @@ DEFINE_string(output_video_path, "",
 // Warring! Global varible
 landmarks_to_shm::shm shmObj;
 landmarks_to_shm::gesture gesObj;
-//landmarks_datatype::coordinate3d_t norm_landmark[21];
 //****************************************************************************************/
 ::mediapipe::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
@@ -197,10 +198,12 @@ landmarks_to_shm::gesture gesObj;
     if (save_video) {
       writer.write(output_frame_mat);
     } else {
+    #ifdef IMSHOW_ENABLE
       cv::imshow(kWindowName, output_frame_mat);
       // Press any key to exit.
-      const int pressed_key = cv::waitKey(5);
+      const int pressed_key = cv::waitKey(1);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    #endif
     }
   
     // restore landmark to shm array
@@ -223,11 +226,11 @@ landmarks_to_shm::gesture gesObj;
         landmarks_datatype::bbCentral_name).first;
     bbCentral[0] = {output_rect.x_center(), output_rect.y_center()};
     // resize
-    bbCentral[0] = bbCentral[0] * landmarks_datatype::image_size;
+    //bbCentral[0] = bbCentral[0] * landmarks_datatype::image_size;
 
-    // norm_landmark is global var
     // shmObj, gesObj is global object
-    gesObj.similarity(norm_landmark);
+    gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
+    gesObj.similarity();
   }
 
   LOG(INFO) << "Shutting down.";
@@ -238,10 +241,10 @@ landmarks_to_shm::gesture gesObj;
 
 int main(int argc, char** argv) {
   // ges, shm are global object
-  gesObj.load_gesture("/home/fdmdkw/code/project/mediapipe/store_gesture/");
+  gesObj.load_resize_rotate_gestures3d(landmarks_datatype::gesture_path);
   // relative path failed
-  //gesObj.load_gesture("../../../store_gesture/");
-  gesObj.print_gestures();
+  //gesObj.load_gesture("../../../store_gesture");
+  gesObj.print_gestures3d();
 
   // maybe need run similarity after getting landmark every frame
   //std::thread similarity(&landmarks_to_shm::gesture::similarity, &ges);

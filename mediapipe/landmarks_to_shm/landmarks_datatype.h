@@ -107,5 +107,6 @@ namespace landmarks_datatype{
     extern const char *bbCentral_name;
     extern const int bbCentral_shm_size;
     extern const coordinate3d_t image_size;
+    extern const char *gesture_path;
 }
 #endif

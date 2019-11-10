@@ -9,47 +9,56 @@
 
 #include "landmarks_datatype.h"
 
-//#define PRINT_DEBUG
+#define PRINT_DEBUG
 
 namespace landmarks_to_shm{
     class shm{
     public:
         shm(void);
         ~shm();
-        void get_normLandVector(landmarks_datatype::coordinate3d_t**);
-        void print_shm_norm_landmarks(void);
+        // seg fault
+        void get_norm_landmark3d_ptr(landmarks_datatype::coordinate3d_t* _norm_landmark3d_ptr);
+        void print_shm_norm_landmark3d(void);
         void print_shm_bbCentral(void);
-        void print_shm(const char *val_shm_name);
+        void print_shm(const char *_val_shm_name);
     };
 
     class gesture{
     public:
         gesture(void);
         ~gesture();
-        void store_gesture(void);
-        void store_gesture(int gesture_num);
-        void load_gesture(std::string dir);
-        void similarity(void);
-        void similarity(landmarks_datatype::coordinate3d_t* norm_landmark);
-        void print_gestures(void);
-        void rotate2d(landmarks_datatype::coordinate3d_t* norm_landmark);
+        void store_gestures3d(const std::string &_dir);
+        void store_gestures3d(int _gesture_num, const std::string &_dir);
+        void load_resize_rotate_gestures3d(const std::string &_dir);
+        void print_gestures3d(void);
+        void init_gestures3d(void);
+        void delete_gestures3d(void);
+
+        void init_norm_landmark3d(void);
+        void delete_norm_landmark3d(void);
+        void load_resize_rotate_norm_landmark3d(landmarks_datatype::coordinate3d_t *_shm_norm_landmark3d);
+
+        void similarity();
+        void rotate(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void resize(landmarks_datatype::coordinate3d_t* _norm_landmark3d);
 
         // Wraps around an angle in radians to within -M_PI and M_PI.
         inline float NormalizeRadians(float angle) {
             return angle - 2 * M_PI * std::floor((angle - (-M_PI)) / (2 * M_PI));
         }
-        
-        const int gesture_max_num = 32;
-        int gesture_num;
-        landmarks_datatype::gesture_t *gestures;
-        const float similarity_lowbound = 0.8f;
-        
+
     private:
         void init_gesture_num(void);
+
+        int gesture_num_;
+        landmarks_datatype::coordinate3d_t* norm_landmark3d_;
+        landmarks_datatype::gesture_t *gestures3d_;
 
         const float target_angle_ = M_PI * 0.5f;  // In radians.
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
+        const int gesture_max_num_ = 32;
+        const float similarity_lowbound_ = 0.8f;
     };
 }
 

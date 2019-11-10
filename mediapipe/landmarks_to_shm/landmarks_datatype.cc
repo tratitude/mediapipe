@@ -8,4 +8,5 @@ namespace landmarks_datatype{
     const char *bbCentral_name = "BoundingBoxCentral";
     const int bbCentral_shm_size = 16;  // need 4*3=12 bytes
     const coordinate3d_t image_size = {256, 256};
+    const char *gesture_path = "/home/fdmdkw/code/project/mediapipe/store_gesture";
 }
