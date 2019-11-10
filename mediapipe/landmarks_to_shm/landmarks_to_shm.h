@@ -60,7 +60,7 @@ namespace landmarks_to_shm{
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
         const int gesture_max_num_ = 32;
-        const float similarity_lowbound_ = 0.8f;
+        const float similarity_lowbound_ = -400.f;
     };
 }
 

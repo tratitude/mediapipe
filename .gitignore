@@ -10,3 +10,4 @@ bazel-mediapipe
 .vscode
 *.o
 *.gestureLog
+*.png

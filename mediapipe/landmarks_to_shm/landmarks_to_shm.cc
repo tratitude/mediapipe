@@ -170,9 +170,9 @@ void landmarks_to_shm::gesture::store_gestures3d(const std::string &_dir)
 
 void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::string &_dir)
 {
-    std::printf("num: %d gesture\n", gesture_num_);
+    std::printf("num: %d gesture\n", _gesture_num);
 
-    const std::string path = _dir + "/" + std::to_string(gesture_num_)+".gesture";
+    const std::string path = _dir + "/" + std::to_string(_gesture_num)+".gesture";
     #ifdef PRINT_DEBUG
         std::puts("load_gesture: dir");
         std::cout << path;
@@ -201,8 +201,10 @@ void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::st
         gesture_file << i << " " << normLand3d[i].x << " "
         << normLand3d[i].y << " " << normLand3d[i].z << "\n";
 
+    #ifdef PRINT_DEBUG
         std::cout << i << " " << normLand3d[i].x << " "
         << normLand3d[i].y << " " << normLand3d[i].z << "\n";
+    #endif
     }
 
     std::puts("input gesture name");
@@ -272,7 +274,7 @@ void landmarks_to_shm::gesture::print_gestures3d(void)
 void landmarks_to_shm::gesture::similarity(float *_match_gesture)
 {
     int max_gesture = 0;
-    float max_similarity = 0.f;
+    float max_similarity = (-1)*landmarks_datatype::norm_landmark_size*(landmarks_datatype::image_size.x+landmarks_datatype::image_size.y);
     
     // normalize landmarks by gesture distance of root to middle MCP
     for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
@@ -285,20 +287,19 @@ void landmarks_to_shm::gesture::similarity(float *_match_gesture)
     for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
         float avg_sim = 0.f;
         for(int landmark_cnt=1; landmark_cnt<landmarks_datatype::norm_landmark_size; landmark_cnt++){
-            float inner = (gestures3d_[gesture_cnt].co[landmark_cnt] * norm_landmark3d_[landmark_cnt]).distance();
-            float product = gestures3d_[gesture_cnt].co[landmark_cnt].distance()*norm_landmark3d_[landmark_cnt].distance();
-            avg_sim +=  inner / product;
+            float dis = (gestures3d_[gesture_cnt].co[landmark_cnt] - norm_landmark3d_[landmark_cnt]).distance();
+            avg_sim -= dis;
         
         #ifdef PRINT_DEBUG
-            std::puts("similarity: inner, product");
-            std::cout << inner << " " << product << "\n";
+            std::puts("similarity: landmark_cnt, dis");
+            std::cout << landmark_cnt << " " << dis << "\n";
         #endif
         
         }
     
     #ifdef PRINT_DEBUG
-        std::puts("similarity: avg_sim");
-        std::cout << avg_sim << "\n";
+        std::puts("similarity: gesture_cnt, avg_sim");
+        std::cout << gesture_cnt << " " << avg_sim << "\n";
     #endif
     
         if(avg_sim > max_similarity){
@@ -306,13 +307,13 @@ void landmarks_to_shm::gesture::similarity(float *_match_gesture)
             max_gesture = gesture_cnt;
         }
     }
-    *_match_gesture = max_similarity < similarity_lowbound_ * landmarks_datatype::norm_landmark_size ? -1 : max_gesture;
+    *_match_gesture = max_similarity < similarity_lowbound_ ? -1 : max_gesture;
 
 #ifdef PRINT_DEBUG
     std::puts("similarity: match_gesture");
     std::cout << *_match_gesture << "\n";
-    std::puts("similarity: average similarity");
-    std::cout << max_similarity/21 << "\n";
+    std::puts("similarity: max_similarity");
+    std::cout << max_similarity << "\n";
 #endif
 }
 
