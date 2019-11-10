@@ -211,7 +211,7 @@ landmarks_to_shm::gesture gesObj;
     boost::interprocess::managed_shared_memory segment(
         boost::interprocess::open_or_create, 
         landmarks_datatype::shm_name,
-        landmarks_datatype::norm_landmark_shm_size);
+        landmarks_datatype::shm_size);
 
     //Find the vector using the c-string name
     landmarks_datatype::coordinate3d_t *norm_landmark = 
@@ -221,16 +221,16 @@ landmarks_to_shm::gesture gesObj;
       norm_landmark[counter] = {output_landmarks[counter].x(), output_landmarks[counter].y(), output_landmarks[counter].z()};
     }
 
+    // shmObj, gesObj is global object
+    gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
+    float match_gesture;
+    gesObj.similarity(&match_gesture);
+
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::bbCentral_name).first;
-    bbCentral[0] = {output_rect.x_center(), output_rect.y_center()};
-    // resize
-    //bbCentral[0] = bbCentral[0] * landmarks_datatype::image_size;
-
-    // shmObj, gesObj is global object
-    gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
-    gesObj.similarity();
+    // x=x_center, y=y_center, z=match_gesture
+    bbCentral[0] = {output_rect.x_center(), output_rect.y_center(), match_gesture};
   }
 
   LOG(INFO) << "Shutting down.";

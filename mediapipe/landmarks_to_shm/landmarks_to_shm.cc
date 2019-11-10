@@ -14,7 +14,7 @@ landmarks_to_shm::shm::shm(void)
     boost::interprocess::managed_shared_memory segment(
         boost::interprocess::create_only, 
         landmarks_datatype::shm_name, 
-        landmarks_datatype::norm_landmark_shm_size);
+        landmarks_datatype::shm_size);
 // normLand3d
     //Construct an array named norm_landmark_name in shared memory
     landmarks_datatype::coordinate3d_t *normLand3d = 
@@ -23,6 +23,7 @@ landmarks_to_shm::shm::shm(void)
         [landmarks_datatype::norm_landmark_size]();
 
 // bbCentral
+// x=x_center, y=y_center, z=match_gesture
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.construct<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::bbCentral_name)[1]();
@@ -96,18 +97,36 @@ void landmarks_to_shm::shm::get_norm_landmark3d_ptr(
     landmarks_datatype::coordinate3d_t* _norm_landmark3d_ptr)
 {
     //Open the managed segment
-  boost::interprocess::managed_shared_memory segment(
-    boost::interprocess::open_or_create, 
-    landmarks_datatype::shm_name, 
-    landmarks_datatype::norm_landmark_shm_size);
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_or_create, 
+        landmarks_datatype::shm_name, 
+        landmarks_datatype::shm_size);
 
     //Find the vector using the c-string name
     _norm_landmark3d_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
         landmarks_datatype::norm_landmark_name).first;
 
 #ifdef PRINT_DEBUG
-    std::puts("In get_normLand");
+    std::puts("In get_norm_landmark3d_ptr");
     std::printf("_norm_landmark3d_ptr adress: %p\n", _norm_landmark3d_ptr);
+#endif
+}
+
+void landmarks_to_shm::shm::get_bbCentral_ptr(landmarks_datatype::coordinate3d_t* _bbCentral_ptr)
+{
+    //Open the managed segment
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_or_create, 
+        landmarks_datatype::shm_name, 
+        landmarks_datatype::shm_size);
+
+    //Find the vector using the c-string name
+    _bbCentral_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::bbCentral_name).first;
+
+#ifdef PRINT_DEBUG
+    std::puts("In get_bbCentral_ptr");
+    std::printf("_bbCentral_ptr adress: %p\n", _bbCentral_ptr);
 #endif
 }
 
@@ -236,7 +255,7 @@ void landmarks_to_shm::gesture::load_resize_rotate_gestures3d(const std::string 
 
 void landmarks_to_shm::gesture::init_gesture_num(void)
 {
-    gesture_num_ = 6;
+    gesture_num_ = 10;
 }
 
 void landmarks_to_shm::gesture::print_gestures3d(void)
@@ -250,7 +269,7 @@ void landmarks_to_shm::gesture::print_gestures3d(void)
     }
 }
 
-void landmarks_to_shm::gesture::similarity()
+void landmarks_to_shm::gesture::similarity(float *_match_gesture)
 {
 #ifdef PRINT_DEBUG
     std::puts("similarity, after resized to full image: norm_landmark3d_");
@@ -268,8 +287,6 @@ void landmarks_to_shm::gesture::similarity()
             norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
     }
 #endif
-    // shm
-    uint32_t match_gesture = 0;
 
     int max_gesture = 0;
     float max_similarity = 0.f;
@@ -298,16 +315,11 @@ void landmarks_to_shm::gesture::similarity()
             max_gesture = i;
         }
     }
-    if(max_similarity < similarity_lowbound_ * landmarks_datatype::norm_landmark_size){
-        match_gesture = 0;
-    }
-    else{
-        match_gesture = 1 << max_gesture;
-    }
-    
+    *_match_gesture = max_similarity < similarity_lowbound_ * landmarks_datatype::norm_landmark_size ? -1 : max_gesture;
+
 #ifdef PRINT_DEBUG
     std::puts("similarity: match_gesture");
-    std::cout << match_gesture << "\n";
+    std::cout << *_match_gesture << "\n";
     std::puts("similarity: average similarity");
     std::cout << max_similarity/21 << "\n";
 #endif

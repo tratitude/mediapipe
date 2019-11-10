@@ -18,6 +18,7 @@ namespace landmarks_to_shm{
         ~shm();
         // seg fault
         void get_norm_landmark3d_ptr(landmarks_datatype::coordinate3d_t* _norm_landmark3d_ptr);
+        void get_bbCentral_ptr(landmarks_datatype::coordinate3d_t* _bbCentral_ptr);
         void print_shm_norm_landmark3d(void);
         void print_shm_bbCentral(void);
         void print_shm(const char *_val_shm_name);
@@ -38,7 +39,7 @@ namespace landmarks_to_shm{
         void delete_norm_landmark3d(void);
         void load_resize_rotate_norm_landmark3d(landmarks_datatype::coordinate3d_t *_shm_norm_landmark3d);
 
-        void similarity();
+        void similarity(float *_match_gesture);
         void rotate(landmarks_datatype::coordinate3d_t* _landmark3d);
         void resize(landmarks_datatype::coordinate3d_t* _norm_landmark3d);
 
@@ -52,6 +53,7 @@ namespace landmarks_to_shm{
 
         int gesture_num_;
         landmarks_datatype::coordinate3d_t* norm_landmark3d_;
+        // x=x_center, y=y_center, z=match_gesture
         landmarks_datatype::gesture_t *gestures3d_;
 
         const float target_angle_ = M_PI * 0.5f;  // In radians.
