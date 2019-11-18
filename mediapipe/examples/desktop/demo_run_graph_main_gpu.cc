@@ -42,8 +42,9 @@
 
 #include <iostream>
 #include <thread>
+#include <ctime>
 
-#define IMSHOW_ENABLE
+//#define IMSHOW_ENABLE
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
@@ -64,6 +65,24 @@ DEFINE_string(output_video_path, "",
 // Warring! Global varible
 landmarks_to_shm::shm shmObj;
 landmarks_to_shm::gesture gesObj;
+double input_video_fps = 0.f;
+double gesture_fps = 0.f;
+double gesture_time = 0.f;
+long long unsigned int gesture_cnt = 0;
+struct timespec start, end;
+//****************************************************************************************/
+// POSIX time measurement
+struct timespec diff(struct timespec start, struct timespec end) {
+  struct timespec temp;
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  return temp;
+}
 //****************************************************************************************/
 ::mediapipe::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
@@ -126,6 +145,10 @@ landmarks_to_shm::gesture gesObj;
   LOG(INFO) << "Start grabbing and processing frames.";
   size_t frame_timestamp = 0;
   bool grab_frames = true;
+  // get fps
+  input_video_fps = capture.get(cv::CAP_PROP_FPS);
+  // time start
+  clock_gettime(CLOCK_MONOTONIC, &start);
   while (grab_frames) {
     // Capture opencv camera or video frame.
     cv::Mat camera_frame_raw;
@@ -232,7 +255,22 @@ landmarks_to_shm::gesture gesObj;
         landmarks_datatype::bbCentral_name).first;
     // x=x_center, y=y_center, z=match_gesture
     bbCentral[0] = {output_rect.x_center(), output_rect.y_center(), match_gesture};
+
+    // count gesture fps
+    //if(gesture_cnt < ULLONG_MAX-2){
+    if(gesture_cnt < LLONG_MAX){
+      ++gesture_cnt;
+    }
+    else{
+      std::puts("gesture_fps_cnt finished");
+      break;
+    }
   }
+  // time end
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  struct timespec temp = diff(start, end);
+  gesture_time = (temp.tv_sec + (double) temp.tv_nsec / 1000000000.0);
+  gesture_fps = gesture_time / gesture_cnt;
 
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
@@ -259,7 +297,10 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Success!";
   }
 
-  //similarity.join();
+  std::puts("**********************************************************************************");
+  std::printf("input_video_fps: %lf\n", input_video_fps);
+  std::printf("gesture_time: %lf gesture_cnt: %lld gesture_fps: %lf\n", gesture_time, gesture_cnt, gesture_fps);
+  std::puts("**********************************************************************************");
 
   return 0;
 }
