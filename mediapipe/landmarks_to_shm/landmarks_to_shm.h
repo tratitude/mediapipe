@@ -40,6 +40,7 @@ namespace landmarks_to_shm{
         void load_resize_rotate_norm_landmark3d(landmarks_datatype::coordinate3d_t *_shm_norm_landmark3d);
 
         void similarity(float *_match_gesture);
+        void gesture_similarity_test(void);
         void rotate(landmarks_datatype::coordinate3d_t* _landmark3d);
         void resize(landmarks_datatype::coordinate3d_t* _norm_landmark3d);
 
@@ -60,7 +61,7 @@ namespace landmarks_to_shm{
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
         const int gesture_max_num_ = 32;
-        const float similarity_lowbound_ = -400.f;
+        const float similarity_lowbound_ = -150.f;
     };
 }
 

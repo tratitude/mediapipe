@@ -279,8 +279,10 @@ void landmarks_to_shm::gesture::similarity(float *_match_gesture)
     // normalize landmarks by gesture distance of root to middle MCP
     for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
         float gesture_dis = gestures3d_[gesture_cnt].co[end_keypoint_index_].distance();
+        float landmark_dis = norm_landmark3d_[end_keypoint_index_].distance();
+
         for(int landmark_cnt=1; landmark_cnt<landmarks_datatype::norm_landmark_size; landmark_cnt++){
-            norm_landmark3d_[landmark_cnt] = norm_landmark3d_[landmark_cnt] * gesture_dis * (1/norm_landmark3d_[landmark_cnt].distance());
+            norm_landmark3d_[landmark_cnt] = norm_landmark3d_[landmark_cnt] * (gesture_dis / landmark_dis);
         }
     }
 
@@ -310,11 +312,45 @@ void landmarks_to_shm::gesture::similarity(float *_match_gesture)
     *_match_gesture = max_similarity < similarity_lowbound_ ? -1 : max_gesture;
 
 #ifdef PRINT_DEBUG
-    std::puts("similarity: match_gesture");
-    std::cout << *_match_gesture << "\n";
+    std::puts("similarity: match_gesture, max_gesture");
+    std::cout << *_match_gesture << " " << max_gesture << "\n";
     std::puts("similarity: max_similarity");
     std::cout << max_similarity << "\n";
 #endif
+}
+
+void landmarks_to_shm::gesture::gesture_similarity_test(void)
+{
+    std::puts("gesture_similarity_test");
+    float min_dis = 1000.f;
+    for(int gesture_cnt=0; gesture_cnt < gesture_num_; gesture_cnt++){
+        float gesture_dis = gestures3d_[gesture_cnt].co[end_keypoint_index_].distance();
+        landmarks_datatype::coordinate3d_t cmp[landmarks_datatype::norm_landmark_size];
+
+        for(int inner_cnt=gesture_cnt; inner_cnt < gesture_num_; inner_cnt++){
+            for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+                cmp[i] = gestures3d_[inner_cnt].co[i];
+            }
+
+            float cmp_dis = cmp[end_keypoint_index_].distance();
+            for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+                cmp[i] = cmp[i] * (gesture_dis / cmp_dis);
+            }
+            
+            float sim_dis = 0.f;
+            for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
+                landmarks_datatype::coordinate3d_t tmp = gestures3d_[gesture_cnt].co[i] - cmp[i];
+                sim_dis += tmp.distance();
+            }
+            if(sim_dis != 0.f){
+                min_dis = std::min(sim_dis, min_dis);
+            }
+            std::printf("%d %d sim_dis: %f\n", gesture_cnt, inner_cnt, sim_dis);
+        }
+    }
+    // gesture 1, 7
+    // min_dis: 123.833733
+    std::printf("min_dis: %f\n", min_dis);
 }
 
 void landmarks_to_shm::gesture::rotate(

@@ -36,10 +36,18 @@ void print_gesture()
 
 int main()
 {
+    landmarks_to_shm::gesture ges;
+// print gesture picture
     print_gesture();
-    //landmarks_to_shm::gesture ges;
+
+// define gesture
     //ges.store_gestures3d(".");
 
+// calculate defined gesture similarity
+    //ges.load_resize_rotate_gestures3d(".");
+    //ges.gesture_similarity_test();
+
+// test shm
 /*
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
