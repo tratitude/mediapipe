@@ -130,8 +130,10 @@ struct timespec diff(struct timespec start, struct timespec end) {
   }
 
   LOG(INFO) << "Start running the calculator graph.";
+#ifdef IMSHOW_ENABLE
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
                    graph.AddOutputStreamPoller(kOutputStream));
+#endif
   // hand landmarks stream
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_landmark,
             graph.AddOutputStreamPoller(kLandmarksStream));
@@ -148,7 +150,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
   // get fps
   input_video_fps = capture.get(cv::CAP_PROP_FPS);
   // time start
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  clock_gettime(CLOCK_MONOTONIC_COARSE, &start);
   while (grab_frames) {
     // Capture opencv camera or video frame.
     cv::Mat camera_frame_raw;
@@ -184,18 +186,21 @@ struct timespec diff(struct timespec start, struct timespec end) {
         }));
 
     // Get the graph result packet, or stop if that fails.
+  #ifdef IMSHOW_ENABLE
     mediapipe::Packet packet;
+  #endif
     mediapipe::Packet landmark_packet;
     mediapipe::Packet rect_packet;
-
+  #ifdef IMSHOW_ENABLE
     if (!poller.Next(&packet)) break;
+  #endif
     if (!poller_landmark.Next(&landmark_packet)) break;
     if (!poller_rect.Next(&rect_packet)) break;
 
     std::unique_ptr<mediapipe::ImageFrame> output_frame;
     auto& output_landmarks = landmark_packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
     auto& output_rect = rect_packet.Get<::mediapipe::NormalizedRect>();
-    
+  #ifdef IMSHOW_ENABLE
     // Convert GpuBuffer to ImageFrame.
     MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
         [&packet, &output_frame, &gpu_helper]() -> ::mediapipe::Status {
@@ -214,21 +219,20 @@ struct timespec diff(struct timespec start, struct timespec end) {
           texture.Release();
           return ::mediapipe::OkStatus();
         }));
-
+  
     // Convert back to opencv for display or saving.
     cv::Mat output_frame_mat = mediapipe::formats::MatView(output_frame.get());
     cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
     if (save_video) {
       writer.write(output_frame_mat);
     } else {
-    #ifdef IMSHOW_ENABLE
+    
       cv::imshow(kWindowName, output_frame_mat);
       // Press any key to exit.
       const int pressed_key = cv::waitKey(1);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
-    #endif
     }
-  
+  #endif
     // restore landmark to shm array
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
@@ -258,7 +262,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
 
     // count gesture fps
     //if(gesture_cnt < ULLONG_MAX-2){
-    if(gesture_cnt < LLONG_MAX){
+    if(gesture_cnt < 100){
       ++gesture_cnt;
     }
     else{
@@ -267,7 +271,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
     }
   }
   // time end
-  clock_gettime(CLOCK_MONOTONIC, &end);
+  clock_gettime(CLOCK_MONOTONIC_COARSE, &end);
   struct timespec temp = diff(start, end);
   gesture_time = (temp.tv_sec + (double) temp.tv_nsec / 1000000000.0);
   gesture_fps = gesture_time / gesture_cnt;
@@ -297,10 +301,10 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Success!";
   }
 
-  std::puts("**********************************************************************************");
+  std::puts("*********************************************************");
   std::printf("input_video_fps: %lf\n", input_video_fps);
   std::printf("gesture_time: %lf gesture_cnt: %lld gesture_fps: %lf\n", gesture_time, gesture_cnt, gesture_fps);
-  std::puts("**********************************************************************************");
+  std::puts("*********************************************************");
 
   return 0;
 }
