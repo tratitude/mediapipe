@@ -274,7 +274,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
   clock_gettime(CLOCK_MONOTONIC_COARSE, &end);
   struct timespec temp = diff(start, end);
   gesture_time = (temp.tv_sec + (double) temp.tv_nsec / 1000000000.0);
-  gesture_fps = gesture_time / gesture_cnt;
+  gesture_fps = gesture_cnt / gesture_time;
 
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
