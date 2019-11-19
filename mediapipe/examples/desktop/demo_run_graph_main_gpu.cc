@@ -45,6 +45,7 @@
 #include <ctime>
 
 //#define IMSHOW_ENABLE
+//#define FPS_TEST
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
@@ -145,12 +146,15 @@ struct timespec diff(struct timespec start, struct timespec end) {
   MP_RETURN_IF_ERROR(graph.StartRun({}));
 
   LOG(INFO) << "Start grabbing and processing frames.";
+
   size_t frame_timestamp = 0;
   bool grab_frames = true;
+#ifdef FPS_TEST
   // get fps
   input_video_fps = capture.get(cv::CAP_PROP_FPS);
   // time start
   clock_gettime(CLOCK_MONOTONIC_COARSE, &start);
+#endif
   while (grab_frames) {
     // Capture opencv camera or video frame.
     cv::Mat camera_frame_raw;
@@ -259,23 +263,25 @@ struct timespec diff(struct timespec start, struct timespec end) {
         landmarks_datatype::bbCentral_name).first;
     // x=x_center, y=y_center, z=match_gesture
     bbCentral[0] = {output_rect.x_center(), output_rect.y_center(), match_gesture};
-
+  #ifdef FPS_TEST
     // count gesture fps
     //if(gesture_cnt < ULLONG_MAX-2){
-    if(gesture_cnt < 100){
+    if(gesture_cnt < 1000){
       ++gesture_cnt;
     }
     else{
       std::puts("gesture_fps_cnt finished");
       break;
     }
+  #endif
   }
+#ifdef FPS_TEST
   // time end
   clock_gettime(CLOCK_MONOTONIC_COARSE, &end);
   struct timespec temp = diff(start, end);
   gesture_time = (temp.tv_sec + (double) temp.tv_nsec / 1000000000.0);
   gesture_fps = gesture_cnt / gesture_time;
-
+#endif
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
@@ -300,11 +306,11 @@ int main(int argc, char** argv) {
   } else {
     LOG(INFO) << "Success!";
   }
-
+#ifdef FPS_TEST
   std::puts("*********************************************************");
   std::printf("input_video_fps: %lf\n", input_video_fps);
   std::printf("gesture_time: %lf gesture_cnt: %lld gesture_fps: %lf\n", gesture_time, gesture_cnt, gesture_fps);
   std::puts("*********************************************************");
-
+#endif
   return 0;
 }
