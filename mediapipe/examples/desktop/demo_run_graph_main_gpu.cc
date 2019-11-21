@@ -45,7 +45,8 @@
 #include <ctime>
 
 //#define IMSHOW_ENABLE
-//#define FPS_TEST
+#define FPS_TEST
+#define FPS60
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
@@ -106,7 +107,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
   gpu_helper.InitializeForTest(graph.GetGpuResources().get());
 
   LOG(INFO) << "Initialize the camera or load the video.";
-  cv::VideoCapture capture;
+  cv::VideoCapture capture(cv::CAP_DSHOW + 0);
   const bool load_video = !FLAGS_input_video_path.empty();
   if (load_video) {
     capture.open(FLAGS_input_video_path);
@@ -114,6 +115,14 @@ struct timespec diff(struct timespec start, struct timespec end) {
     capture.open(0);
   }
   RET_CHECK(capture.isOpened());
+#ifdef FPS60
+// Found unchecked GL error: GL_INVALID_FRAMEBUFFER_OPERATION
+  int fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
+  capture.set(cv::CAP_PROP_FOURCC, fourcc);
+  capture.set(cv::CAP_PROP_FRAME_WIDTH,1280);
+  capture.set(cv::CAP_PROP_FRAME_HEIGHT,720);
+  capture.set(cv::CAP_PROP_FPS, 60);
+#endif
 
   cv::VideoWriter writer;
   const bool save_video = !FLAGS_output_video_path.empty();
@@ -123,7 +132,11 @@ struct timespec diff(struct timespec start, struct timespec end) {
     capture.read(test_frame);                    // Consume first frame.
     capture.set(cv::CAP_PROP_POS_AVI_RATIO, 0);  // Rewind to beginning.
     writer.open(FLAGS_output_video_path,
+              #ifdef FPS60
+                mediapipe::fourcc('M', 'J', 'P', 'G'),  // .mjpg
+              #elif
                 mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
+              #endif
                 capture.get(cv::CAP_PROP_FPS), test_frame.size());
     RET_CHECK(writer.isOpened());
   } else {
