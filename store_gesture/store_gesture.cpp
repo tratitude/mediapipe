@@ -3,6 +3,8 @@
 #include <string>
 #include "../mediapipe/landmarks_to_shm/landmarks_to_shm.h" 
 
+landmarks_to_shm::gesture ges;
+
 void print_gesture()
 {
     for(int i=0; i<10; i++){
@@ -34,11 +36,44 @@ void print_gesture()
     }
 }
 
+void print_gesture_shm()
+{
+    std::string outputpath = "./out.gestureLog";
+    std::ofstream log_file(outputpath);
+    if(!log_file){
+        std::perror("output open");
+        exit(EXIT_FAILURE);
+    }
+
+    //Open the managed segment
+    boost::interprocess::managed_shared_memory segment(
+        boost::interprocess::open_or_create, 
+        landmarks_datatype::shm_name, 
+        landmarks_datatype::shm_size);
+
+    //Find the vector using the c-string name
+    landmarks_datatype::coordinate3d_t *norm_landmark3d_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
+        landmarks_datatype::norm_landmark_name).first;
+    ges.resize(norm_landmark3d_ptr);
+    ges.rotate3d_yz(norm_landmark3d_ptr);
+    ges.rotate3d_z(norm_landmark3d_ptr);
+
+    for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
+        log_file << norm_landmark3d_ptr[j].x << " " << norm_landmark3d_ptr[j].y << "\n";
+    }
+    log_file.close();
+}
+
 int main()
 {
-    landmarks_to_shm::gesture ges;
 // print gesture picture
-    print_gesture();
+    //print_gesture();
+
+// print gesture picture from shm
+    while(true){
+        char c; std::cin >> c;
+        print_gesture_shm();
+    }
 
 // define gesture
     //ges.store_gestures3d(".");
