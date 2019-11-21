@@ -5,7 +5,7 @@
 #include <string>
 #include <limits>
 
-//#define THREE_D
+#define THREE_D
 #define FLOAT_MIN 1e-10
 
 namespace landmarks_datatype{
@@ -24,6 +24,28 @@ namespace landmarks_datatype{
         {
             x = p.x; y = p.y; z = p.z;
             return *this;
+        }
+
+        float distance(void)
+        {
+            float total = 0.f;
+            if(fabs(x) > FLOAT_MIN)
+                total += x*x;
+            if(fabs(y) > FLOAT_MIN)
+                total += y*y;
+            return (sqrtf(total));
+        }
+
+        float distance3d(void)
+        {
+            float total = 0.f;
+            if(fabs(x) > FLOAT_MIN)
+                total += x*x;
+            if(fabs(y) > FLOAT_MIN)
+                total += y*y;
+            if(fabs(z) > FLOAT_MIN)
+                total += z*z;
+            return (cbrtf(total));
         }
         
     #ifndef THREE_D
@@ -48,17 +70,7 @@ namespace landmarks_datatype{
         {
             return coordinate3d_t(x*c, y*c, z);
         }
-
-        float distance(void)
-        {
-            float total = 0.f;
-            if(fabs(x) > FLOAT_MIN)
-                total += x*x;
-            if(fabs(y) > FLOAT_MIN)
-                total += y*y;
-            return (sqrtf(total));
-        }
-    #elif
+    #else
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
             return coordinate3d_t(x+p.x, y+p.y, z+p.z);
@@ -81,16 +93,13 @@ namespace landmarks_datatype{
             return coordinate3d_t(x*c, y*c, z*c);
         }
 
-        float distance(void)
+        // cross product axb
+        coordinate3d_t& cross(const coordinate3d_t &a, const coordinate3d_t &b)
         {
-            float total = 0.f;
-            if(fabs(x) > FLOAT_MIN)
-                total += x*x;
-            if(fabs(y) > FLOAT_MIN)
-                total += y*y;
-            if(fabs(z) > FLOAT_MIN)
-                total += z*z;
-            return (cbrtf(total));
+            x = a.y*b.z - a.z*b.y;
+            y = a.z*b.x - a.x*b.z;
+            z = a.x*b.y - a.y*b.x;
+            return *this;
         }
     #endif
     };

@@ -44,9 +44,9 @@
 #include <thread>
 #include <ctime>
 
-//#define IMSHOW_ENABLE
-#define FPS_TEST
-#define FPS60
+#define IMSHOW_ENABLE
+//#define FPS_TEST
+//#define FPS60
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
