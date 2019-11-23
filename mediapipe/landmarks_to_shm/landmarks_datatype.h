@@ -47,7 +47,16 @@ namespace landmarks_datatype{
                 total += z*z;
             return (cbrtf(total));
         }
-        
+/*
+        // cross product axb
+        coordinate3d_t& cross(const coordinate3d_t &a, const coordinate3d_t &b)
+        {
+            x = a.y*b.z - a.z*b.y;
+            y = a.z*b.x - a.x*b.z;
+            z = a.x*b.y - a.y*b.x;
+            return *this;
+        }
+*/
     #ifndef THREE_D
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
@@ -91,15 +100,6 @@ namespace landmarks_datatype{
         coordinate3d_t operator*(const float c) const
         {
             return coordinate3d_t(x*c, y*c, z*c);
-        }
-
-        // cross product axb
-        coordinate3d_t& cross(const coordinate3d_t &a, const coordinate3d_t &b)
-        {
-            x = a.y*b.z - a.z*b.y;
-            y = a.z*b.x - a.x*b.z;
-            z = a.x*b.y - a.y*b.x;
-            return *this;
         }
     #endif
     };
