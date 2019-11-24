@@ -217,8 +217,8 @@ void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::st
 
     gesture_file.close();
 
-    init_gesture_num();
-    load_resize_rotate_gestures3d(_dir);
+    //init_gesture_num();
+    //load_resize_rotate_gestures3d(_dir);
 }
 
 void landmarks_to_shm::gesture::load_resize_rotate_gestures3d(const std::string &_dir)

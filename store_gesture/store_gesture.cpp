@@ -38,10 +38,10 @@ int main()
 {
     landmarks_to_shm::gesture ges;
 // print gesture picture
-    print_gesture();
+    //print_gesture();
 
 // define gesture
-    //ges.store_gestures3d(".");
+    ges.store_gestures3d(".");
 
 // calculate defined gesture similarity
     //ges.load_resize_rotate_gestures3d(".");

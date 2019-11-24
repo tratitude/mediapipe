@@ -45,7 +45,7 @@
 #include <ctime>
 
 //#define IMSHOW_ENABLE
-#define FPS_TEST
+//#define FPS_TEST
 #define FPS60
 
 constexpr char kInputStream[] = "input_video";
@@ -134,7 +134,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
     writer.open(FLAGS_output_video_path,
               #ifdef FPS60
                 mediapipe::fourcc('M', 'J', 'P', 'G'),  // .mjpg
-              #elif
+              #else
                 mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
               #endif
                 capture.get(cv::CAP_PROP_FPS), test_frame.size());
