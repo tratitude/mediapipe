@@ -60,8 +60,10 @@ void print_gesture_shm()
     ges.rotate2d_y(norm_landmark3d_ptr);
 #else
     ges.init_crossVector(norm_landmark3d_ptr);
-    ges.rotate3d_yz(norm_landmark3d_ptr);
-    ges.rotate3d_z(norm_landmark3d_ptr);
+    ges.Rodrigues_z(norm_landmark3d_ptr);
+    ges.rotate2d_y(norm_landmark3d_ptr);
+    //ges.rotate3d_yz(norm_landmark3d_ptr);
+    //ges.rotate3d_z(norm_landmark3d_ptr);
 #endif
     for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
         log_file << norm_landmark3d_ptr[j].x << " " << -norm_landmark3d_ptr[j].y << "\n";

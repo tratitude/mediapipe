@@ -4,6 +4,7 @@
 #include <cmath>
 #include <string>
 #include <limits>
+#include <iostream>
 
 #define THREE_D
 #define FLOAT_MIN 1e-10
@@ -116,5 +117,9 @@ namespace landmarks_datatype{
     extern const char *bbCentral_name;
     extern const coordinate3d_t image_size;
     extern const char *gesture_path;
+
+    coordinate3d_t cross_product(const coordinate3d_t &a, const coordinate3d_t &b);
+    float dot_product(const coordinate3d_t &a, const coordinate3d_t &b);
+    std::ostream& operator <<(std::ostream& os, const coordinate3d_t &p);
 }
 #endif

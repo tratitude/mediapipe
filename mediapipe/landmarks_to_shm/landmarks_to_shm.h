@@ -46,6 +46,7 @@ namespace landmarks_to_shm{
         void rotate3d_z(landmarks_datatype::coordinate3d_t* _landmark3d);
         void resize(landmarks_datatype::coordinate3d_t* _norm_landmark3d);
         void norm_root(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void Rodrigues_z(landmarks_datatype::coordinate3d_t* _landmark3d);
 
         void init_crossVector(landmarks_datatype::coordinate3d_t* _landmark3d);
 
