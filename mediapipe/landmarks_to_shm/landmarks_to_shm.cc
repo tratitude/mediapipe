@@ -245,17 +245,22 @@ void landmarks_to_shm::gesture::load_resize_rotate_gestures3d(const std::string 
         std::getline(gesture_file, s);
         gestures3d_[i].name = s;
 
-        resize(gestures3d_[i].co);
-        norm_root(gestures3d_[i].co);
-    #ifdef THREE_D
-        // 3d
-        init_crossVector(gestures3d_[i].co);
-        Rodrigues_z(gestures3d_[i].co);
-    #endif
-        rotate2d_y(gestures3d_[i].co);
+        resize_rotate3d(gestures3d_[i].co);
         
         gesture_file.close();
     }
+}
+
+void landmarks_to_shm::gesture::resize_rotate3d(landmarks_datatype::coordinate3d_t* _landmark3d)
+{
+    resize(_landmark3d);
+        norm_root(_landmark3d);
+    #ifdef THREE_D
+        // 3d
+        init_crossVector(_landmark3d);
+        Rodrigues_z(_landmark3d);
+    #endif
+        rotate2d_y(_landmark3d);
 }
 
 void landmarks_to_shm::gesture::init_gesture_num(void)
@@ -273,9 +278,9 @@ void landmarks_to_shm::gesture::print_gestures3d(void)
     }
 }
 
-void landmarks_to_shm::gesture::similarity(float *_match_gesture)
+float landmarks_to_shm::gesture::similarity(void)
 {
-    int max_gesture = 0;
+    int max_gesture = -1;
     float max_similarity = (-1)*landmarks_datatype::norm_landmark_size*(landmarks_datatype::image_size.x+landmarks_datatype::image_size.y);
     
     // normalize landmarks by gesture distance of root to middle MCP
@@ -311,14 +316,16 @@ void landmarks_to_shm::gesture::similarity(float *_match_gesture)
             max_gesture = gesture_cnt;
         }
     }
-    *_match_gesture = max_similarity < similarity_lowbound_ ? -1 : max_gesture;
+    float match_gesture = max_similarity < similarity_lowbound_ ? -1 : max_gesture;
 
 #ifdef PRINT_DEBUG
     std::puts("similarity: match_gesture, max_gesture");
-    std::cout << *_match_gesture << " " << max_gesture << "\n";
+    std::cout << match_gesture << " " << max_gesture << "\n";
     std::puts("similarity: max_similarity");
     std::cout << max_similarity << "\n";
 #endif
+
+    return match_gesture;
 }
 
 void landmarks_to_shm::gesture::gesture_similarity_test(void)
@@ -377,41 +384,13 @@ void landmarks_to_shm::gesture::rotate2d_y(
     }
 }
 
-// Rz(θ)
-void landmarks_to_shm::gesture::rotate3d_yz(landmarks_datatype::coordinate3d_t* _landmark3d)
-{
-    float rotation_angle = target_angle_ - std::atan2(-crossVector.y, crossVector.x);
-    //rotation_angle = NormalizeRadians(rotation_angle);
-    const float cosine = cosf(rotation_angle);
-    const float sine = sinf(rotation_angle);
-    crossVector = {cosine*crossVector.x + sine*crossVector.y, cosine*crossVector.y - sine*crossVector.x, crossVector.z};
-
-    //const landmarks_datatype::coordinate3d_t root = _landmark3d[start_keypoint_index_];
-    for(int i=1; i<landmarks_datatype::norm_landmark_size; i++){
-        // rotate clockwise
-        _landmark3d[i] = {cosine*_landmark3d[i].x + sine*_landmark3d[i].y, cosine*_landmark3d[i].y - sine*_landmark3d[i].x, _landmark3d[i].z};
-    }
-}
-
-// Rx(θ)
-void landmarks_to_shm::gesture::rotate3d_z(landmarks_datatype::coordinate3d_t* _landmark3d)
-{
-    float rotation_angle = target_angle_ - std::atan2(crossVector.z, -crossVector.y);
-    //rotation_angle = NormalizeRadians(rotation_angle);
-    const float cosine = cosf(rotation_angle);
-    const float sine = sinf(rotation_angle);
-    crossVector = {crossVector.x, cosine*crossVector.y + sine*crossVector.z, cosine*crossVector.z - sine*crossVector.y};
-
-    for(int i=1; i<landmarks_datatype::norm_landmark_size; i++){
-        // rotate clockwise
-        _landmark3d[i] = {_landmark3d[i].x, cosine*_landmark3d[i].y + sine*_landmark3d[i].z, cosine*_landmark3d[i].z - sine*_landmark3d[i].y};
-    }
-}
-
 void landmarks_to_shm::gesture::Rodrigues_z(landmarks_datatype::coordinate3d_t* _landmark3d)
 {
     landmarks_datatype::coordinate3d_t v_head(crossVector.x, crossVector.y, crossVector.z+1);
-    v_head = v_head * (1 / sqrt(crossVector.x*crossVector.x + crossVector.y*crossVector.y + crossVector.z*crossVector.z));
+    float dis = sqrt(crossVector.x*crossVector.x + crossVector.y*crossVector.y + crossVector.z*crossVector.z);
+    if(dis != 0.f){
+        v_head = v_head * (1 / dis);
+    }
 #ifdef PRINT_DEBUG
     std::puts("Rodrigues_z: v_head");
     std::cout << v_head;
@@ -467,22 +446,7 @@ void landmarks_to_shm::gesture::load_resize_rotate_norm_landmark3d(
     }
 #endif
 
-    resize(norm_landmark3d_);
-    norm_root(norm_landmark3d_);
-
-#ifdef THREE_D
-    // 3d
-    init_crossVector(norm_landmark3d_);
-    Rodrigues_z(norm_landmark3d_);
-#endif
-    // 2d
-    rotate2d_y(norm_landmark3d_);
-#ifdef PRINT_DEBUG
-    std::puts("similarity, after rotate2d_y: norm_landmark3d_");
-    for(int i=0; i<21; i++){
-        std::cout << i << " " <<  norm_landmark3d_[i];
-    }
-#endif
+    resize_rotate3d(norm_landmark3d_);
 }
 
 void landmarks_to_shm::gesture::resize(

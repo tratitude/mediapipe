@@ -39,7 +39,7 @@ namespace landmarks_to_shm{
         void delete_norm_landmark3d(void);
         void load_resize_rotate_norm_landmark3d(landmarks_datatype::coordinate3d_t *_shm_norm_landmark3d);
 
-        void similarity(float *_match_gesture);
+        float similarity(void);
         void gesture_similarity_test(void);
         void rotate2d_y(landmarks_datatype::coordinate3d_t* _landmark3d);
         void rotate3d_yz(landmarks_datatype::coordinate3d_t* _landmark3d);
@@ -47,6 +47,7 @@ namespace landmarks_to_shm{
         void resize(landmarks_datatype::coordinate3d_t* _norm_landmark3d);
         void norm_root(landmarks_datatype::coordinate3d_t* _landmark3d);
         void Rodrigues_z(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void resize_rotate3d(landmarks_datatype::coordinate3d_t* _landmark3d);
 
         void init_crossVector(landmarks_datatype::coordinate3d_t* _landmark3d);
 

@@ -77,17 +77,18 @@ int main()
     //print_gesture();
 
 // print gesture picture from shm
+/*
     while(true){
         char c; std::cin >> c;
         print_gesture_shm();
     }
-
+*/
 // define gesture
     //ges.store_gestures3d(".");
 
 // calculate defined gesture similarity
-    //ges.load_resize_rotate_gestures3d(".");
-    //ges.gesture_similarity_test();
+    ges.load_resize_rotate_gestures3d(".");
+    ges.gesture_similarity_test();
 
 // test shm
 /*
