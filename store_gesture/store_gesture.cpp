@@ -84,12 +84,13 @@ int main()
     }
 */
 // define gesture
-    //ges.store_gestures3d(".");
+    ges.store_gestures3d(".");
 
 // calculate defined gesture similarity
+/*
     ges.load_resize_rotate_gestures3d(".");
     ges.gesture_similarity_test();
-
+*/
 // test shm
 /*
     //Open the managed segment
