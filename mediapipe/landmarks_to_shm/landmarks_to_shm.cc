@@ -287,7 +287,8 @@ float landmarks_to_shm::gesture::similarity(void)
     for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
         float gesture_dis = gestures3d_[gesture_cnt].co[end_keypoint_index_].distance();
         float landmark_dis = norm_landmark3d_[end_keypoint_index_].distance();
-
+        if(landmark_dis == 0.f)
+            continue;
         for(int landmark_cnt=1; landmark_cnt<landmarks_datatype::norm_landmark_size; landmark_cnt++){
             norm_landmark3d_[landmark_cnt] = norm_landmark3d_[landmark_cnt] * (gesture_dis / landmark_dis);
         }
