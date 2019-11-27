@@ -9,7 +9,7 @@
 
 #include "landmarks_datatype.h"
 
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 
 namespace landmarks_to_shm{
     class shm{
@@ -48,8 +48,15 @@ namespace landmarks_to_shm{
         void norm_root(landmarks_datatype::coordinate3d_t* _landmark3d);
         void Rodrigues_z(landmarks_datatype::coordinate3d_t* _landmark3d);
         void resize_rotate3d(landmarks_datatype::coordinate3d_t* _landmark3d);
+        // angle of vector x = a-b and vector y = c-b
+        // angle = acos( (x dot y)/(|x|*|y|) )
+        float cosine_angle3d(landmarks_datatype::coordinate3d_t a, landmarks_datatype::coordinate3d_t b, landmarks_datatype::coordinate3d_t c);
+        float angle_similarity(void);
 
+        void init_angle3d(landmarks_datatype::coordinate3d_t* _landmark3d);
         void init_crossVector(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void init_cmp_angle_joints(void);
+        void delete_cmp_angle_joints(void);
 
         // Wraps around an angle in radians to within -M_PI and M_PI.
         inline float NormalizeRadians(float angle) {
@@ -69,9 +76,12 @@ namespace landmarks_to_shm{
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
         const int gesture_max_num_ = 32;
-        const float similarity_lowbound_ = -150.f;
+        const float similarity_distance_lowbound_ = -150.f;
         const int start_crossVector_index_ = 13;
         const int end_crossVector_index_ = 5;
+        const float similarity_angle_upbound_ = 0.01f;
+        const int cmp_angle_joints_num_ = 15;
+        int *cmp_angle_joints_;
     };
 }
 

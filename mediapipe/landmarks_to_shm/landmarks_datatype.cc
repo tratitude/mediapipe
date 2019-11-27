@@ -18,14 +18,14 @@ namespace landmarks_datatype{
         return {x, y, z};
     }
 
-    float dot_product(const coordinate3d_t &a, const coordinate3d_t &b)
+    float dot_product3d(const coordinate3d_t &a, const coordinate3d_t &b)
     {
         return a.x*b.x + a.y*b.y + a.z*b.z;
     }
 
     std::ostream& operator <<(std::ostream& os, const coordinate3d_t &p)
     {
-        os << p.x << " " << p.y << " " << p.z << "\n";
+        os << p.x << " " << p.y << " " << p.z << " " << p.angle << "\n";
         return os;
     }
 }

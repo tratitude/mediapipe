@@ -11,10 +11,10 @@
 
 namespace landmarks_datatype{
     struct coordinate3d_t{
-        float x, y, z;
+        float x, y, z, angle;
 
-        coordinate3d_t(float _x = 0.0, float _y = 0.0, float _z = 0.0)
-            :x(_x), y(_y), z(_z){}
+        coordinate3d_t(float _x = 0.f, float _y = 0.f, float _z = 0.f, float _angle = 0.f)
+            :x(_x), y(_y), z(_z), angle(_angle){}
 
         bool operator==(const coordinate3d_t p)
         {
@@ -27,7 +27,7 @@ namespace landmarks_datatype{
             return *this;
         }
 
-        float distance(void)
+        float distance(void) const
         {
             float total = 0.f;
             if(fabs(x) > FLOAT_MIN)
@@ -37,7 +37,7 @@ namespace landmarks_datatype{
             return (sqrtf(total));
         }
 
-        float distance3d(void)
+        float distance3d(void) const
         {
             float total = 0.f;
             if(fabs(x) > FLOAT_MIN)
@@ -46,7 +46,7 @@ namespace landmarks_datatype{
                 total += y*y;
             if(fabs(z) > FLOAT_MIN)
                 total += z*z;
-            return (cbrtf(total));
+            return (sqrtf(total));
         }
 /*
         // cross product axb
@@ -119,7 +119,7 @@ namespace landmarks_datatype{
     extern const char *gesture_path;
 
     coordinate3d_t cross_product(const coordinate3d_t &a, const coordinate3d_t &b);
-    float dot_product(const coordinate3d_t &a, const coordinate3d_t &b);
+    float dot_product3d(const coordinate3d_t &a, const coordinate3d_t &b);
     std::ostream& operator <<(std::ostream& os, const coordinate3d_t &p);
 }
 #endif
