@@ -269,7 +269,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
     gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
     
     //float match_gesture = gesObj.similarity();
-    float match_gesture = gesObj.angle_similarity(); std::cout << match_gesture << "\n";
+    float match_gesture = gesObj.angle_similarity();
 
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.find<landmarks_datatype::coordinate3d_t>(
