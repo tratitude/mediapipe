@@ -39,10 +39,24 @@ namespace landmarks_to_shm{
         void delete_norm_landmark3d(void);
         void load_resize_rotate_norm_landmark3d(landmarks_datatype::coordinate3d_t *_shm_norm_landmark3d);
 
-        void similarity(float *_match_gesture);
+        float similarity(void);
         void gesture_similarity_test(void);
-        void rotate(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void rotate2d_y(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void rotate3d_yz(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void rotate3d_z(landmarks_datatype::coordinate3d_t* _landmark3d);
         void resize(landmarks_datatype::coordinate3d_t* _norm_landmark3d);
+        void norm_root(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void Rodrigues_z(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void resize_rotate3d(landmarks_datatype::coordinate3d_t* _landmark3d);
+        // angle of vector x = a-b and vector y = c-b
+        // angle = acos( (x dot y)/(|x|*|y|) )
+        float cosine_angle3d(landmarks_datatype::coordinate3d_t a, landmarks_datatype::coordinate3d_t b, landmarks_datatype::coordinate3d_t c);
+        float angle_similarity(void);
+
+        void init_angle3d(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void init_crossVector(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void init_cmp_angle_joints(void);
+        void delete_cmp_angle_joints(void);
 
         // Wraps around an angle in radians to within -M_PI and M_PI.
         inline float NormalizeRadians(float angle) {
@@ -56,12 +70,18 @@ namespace landmarks_to_shm{
         landmarks_datatype::coordinate3d_t* norm_landmark3d_;
         // x=x_center, y=y_center, z=match_gesture
         landmarks_datatype::gesture_t *gestures3d_;
+        landmarks_datatype::coordinate3d_t crossVector;
 
         const float target_angle_ = M_PI * 0.5f;  // In radians.
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
         const int gesture_max_num_ = 32;
-        const float similarity_lowbound_ = -150.f;
+        const float similarity_distance_lowbound_ = -150.f;
+        const int start_crossVector_index_ = 13;
+        const int end_crossVector_index_ = 5;
+        const float similarity_angle_upbound_ = 0.01f;
+        const int cmp_angle_joints_num_ = 15;
+        int *cmp_angle_joints_;
     };
 }
 

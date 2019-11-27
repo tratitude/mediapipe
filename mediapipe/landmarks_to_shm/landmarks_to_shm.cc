@@ -136,12 +136,14 @@ landmarks_to_shm::gesture::gesture(void)
 {
     init_gestures3d();
     init_norm_landmark3d();
+    init_cmp_angle_joints();
 }
 
 landmarks_to_shm::gesture::~gesture()
 {
     delete_gestures3d();
     delete_norm_landmark3d();
+    delete_cmp_angle_joints();
 }
 
 void landmarks_to_shm::gesture::store_gestures3d(const std::string &_dir)
@@ -198,12 +200,10 @@ void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::st
         landmarks_datatype::norm_landmark_name).second;
     
     for(int i=0; i<normLand3d_size; i++){
-        gesture_file << i << " " << normLand3d[i].x << " "
-        << normLand3d[i].y << " " << normLand3d[i].z << "\n";
+        gesture_file << i << " " << normLand3d[i];
 
     #ifdef PRINT_DEBUG
-        std::cout << i << " " << normLand3d[i].x << " "
-        << normLand3d[i].y << " " << normLand3d[i].z << "\n";
+        std::cout << i << " " << normLand3d[i];
     #endif
     }
 
@@ -247,12 +247,24 @@ void landmarks_to_shm::gesture::load_resize_rotate_gestures3d(const std::string 
         std::getline(gesture_file, s);
         gestures3d_[i].name = s;
 
-        resize(gestures3d_[i].co);
-
-        rotate(gestures3d_[i].co);
-
+        resize_rotate3d(gestures3d_[i].co);
+        //init_angle3d(gestures3d_[i].co);
+        
         gesture_file.close();
     }
+}
+
+void landmarks_to_shm::gesture::resize_rotate3d(landmarks_datatype::coordinate3d_t* _landmark3d)
+{
+    resize(_landmark3d);
+    norm_root(_landmark3d);
+    init_angle3d(_landmark3d);
+#ifdef THREE_D
+    // 3d
+    init_crossVector(_landmark3d);
+    Rodrigues_z(_landmark3d);
+#endif
+    rotate2d_y(_landmark3d);
 }
 
 void landmarks_to_shm::gesture::init_gesture_num(void)
@@ -265,22 +277,22 @@ void landmarks_to_shm::gesture::print_gestures3d(void)
     for(int i=0; i<gesture_num_; i++){
         std::cout << i << " : " << gestures3d_[i].name << "\n";
         for(int j=0; j<landmarks_datatype::norm_landmark_size; j++){
-            std::cout << gestures3d_[i].co[j].x << " " << gestures3d_[i].co[j].y <<
-                " " << gestures3d_[i].co[j].z << "\n";
+            std::cout << gestures3d_[i].co[j];
         }
     }
 }
 
-void landmarks_to_shm::gesture::similarity(float *_match_gesture)
+float landmarks_to_shm::gesture::similarity(void)
 {
-    int max_gesture = 0;
+    int max_gesture = -1;
     float max_similarity = (-1)*landmarks_datatype::norm_landmark_size*(landmarks_datatype::image_size.x+landmarks_datatype::image_size.y);
     
     // normalize landmarks by gesture distance of root to middle MCP
     for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
         float gesture_dis = gestures3d_[gesture_cnt].co[end_keypoint_index_].distance();
         float landmark_dis = norm_landmark3d_[end_keypoint_index_].distance();
-
+        if(landmark_dis == 0.f)
+            continue;
         for(int landmark_cnt=1; landmark_cnt<landmarks_datatype::norm_landmark_size; landmark_cnt++){
             norm_landmark3d_[landmark_cnt] = norm_landmark3d_[landmark_cnt] * (gesture_dis / landmark_dis);
         }
@@ -309,14 +321,38 @@ void landmarks_to_shm::gesture::similarity(float *_match_gesture)
             max_gesture = gesture_cnt;
         }
     }
-    *_match_gesture = max_similarity < similarity_lowbound_ ? -1 : max_gesture;
+    float match_gesture = max_similarity < similarity_distance_lowbound_ ? -1 : max_gesture;
 
 #ifdef PRINT_DEBUG
     std::puts("similarity: match_gesture, max_gesture");
-    std::cout << *_match_gesture << " " << max_gesture << "\n";
+    std::cout << match_gesture << " " << max_gesture << "\n";
     std::puts("similarity: max_similarity");
     std::cout << max_similarity << "\n";
 #endif
+
+    return match_gesture;
+}
+
+float landmarks_to_shm::gesture::angle_similarity(void)
+{
+    int max_gesture = -1;
+    float max_sim = 200;
+
+    for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
+        float ges_sim = 0.f;
+        for(int joint_cnt=0; joint_cnt<cmp_angle_joints_num_; joint_cnt++){
+            int joint = cmp_angle_joints_[joint_cnt];
+            ges_sim += (gestures3d_[gesture_cnt].co[joint].angle - norm_landmark3d_[joint].angle);
+        }
+        if(ges_sim < max_sim){
+            max_sim = ges_sim;
+            max_gesture = gesture_cnt;
+        }
+    }
+    if(max_sim > similarity_angle_upbound_){
+        max_gesture = -1;
+    }
+    return max_gesture;
 }
 
 void landmarks_to_shm::gesture::gesture_similarity_test(void)
@@ -353,28 +389,48 @@ void landmarks_to_shm::gesture::gesture_similarity_test(void)
     std::printf("min_dis: %f\n", min_dis);
 }
 
-void landmarks_to_shm::gesture::rotate(
+void landmarks_to_shm::gesture::rotate2d_y(
     landmarks_datatype::coordinate3d_t* _landmark3d)
 {
     const landmarks_datatype::coordinate3d_t p0 = _landmark3d[start_keypoint_index_];
     const landmarks_datatype::coordinate3d_t p1 = _landmark3d[end_keypoint_index_];
     float rotation_angle = target_angle_ - std::atan2(-(p1.y - p0.y), p1.x - p0.x);
     //rotation_angle = NormalizeRadians(rotation_angle);
+    const float cosine = cosf(rotation_angle);
+    const float sine = sinf(rotation_angle);
 
-    const landmarks_datatype::coordinate3d_t root = _landmark3d[start_keypoint_index_];
+    //const landmarks_datatype::coordinate3d_t root = _landmark3d[start_keypoint_index_];
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
         if(!i){
             _landmark3d[i] = {0.f, 0.f};
         }
-        else{
-            const float cosine = cosf(rotation_angle);
-            const float sine = sinf(rotation_angle);
-            const landmarks_datatype::coordinate3d_t vec = _landmark3d[i] - root;
-            
+        else{            
             // rotate clockwise
-            _landmark3d[i] = {cosine*vec.x + sine*vec.y, cosine*vec.y - sine*vec.x};
+            _landmark3d[i] = {cosine*_landmark3d[i].x + sine*_landmark3d[i].y, cosine*_landmark3d[i].y - sine*_landmark3d[i].x};
         }
     }
+}
+
+void landmarks_to_shm::gesture::Rodrigues_z(landmarks_datatype::coordinate3d_t* _landmark3d)
+{
+    landmarks_datatype::coordinate3d_t v_head(crossVector.x, crossVector.y, crossVector.z+1);
+    float dis = sqrt(crossVector.x*crossVector.x + crossVector.y*crossVector.y + crossVector.z*crossVector.z);
+    if(dis != 0.f){
+        v_head = v_head * (1 / dis);
+    }
+#ifdef PRINT_DEBUG
+    std::puts("Rodrigues_z: v_head");
+    std::cout << v_head;
+#endif
+    for(int i=1; i<landmarks_datatype::norm_landmark_size; i++){
+        _landmark3d[i] = _landmark3d[i] * (-1) + v_head * 2 * landmarks_datatype::dot_product3d(v_head, _landmark3d[i]);
+    }
+#ifdef PRINT_DEBUG
+    std::puts("Rodrigues_z: _landmark3d");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  _landmark3d[i];
+    }
+#endif
 }
 
 void landmarks_to_shm::gesture::init_gestures3d(void)
@@ -413,28 +469,12 @@ void landmarks_to_shm::gesture::load_resize_rotate_norm_landmark3d(
 #ifdef PRINT_DEBUG
     std::puts("similarity, after load: norm_landmark3d_");
     for(int i=0; i<21; i++){
-        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
-            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
+        std::cout << i << " " <<  norm_landmark3d_[i];
     }
 #endif
 
-    resize(norm_landmark3d_);
-#ifdef PRINT_DEBUG
-    std::puts("similarity, after resized to full image: norm_landmark3d_");
-    for(int i=0; i<21; i++){
-        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
-            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
-    }
-#endif
-
-    rotate(norm_landmark3d_);
-#ifdef PRINT_DEBUG
-    std::puts("similarity, after rotate2d: norm_landmark3d_");
-    for(int i=0; i<21; i++){
-        std::cout << i << " " <<  norm_landmark3d_[i].x << " " << 
-            norm_landmark3d_[i].y << " " << norm_landmark3d_[i].z << "\n";
-    }
-#endif
+    resize_rotate3d(norm_landmark3d_);
+    //init_angle3d(norm_landmark3d_);
 }
 
 void landmarks_to_shm::gesture::resize(
@@ -443,4 +483,71 @@ void landmarks_to_shm::gesture::resize(
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
         _norm_landmark3d[i] = _norm_landmark3d[i] * landmarks_datatype::image_size;
     }
+#ifdef PRINT_DEBUG
+    std::puts("resize: _norm_landmark3d");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  _norm_landmark3d[i];
+    }
+#endif
+}
+
+void landmarks_to_shm::gesture::init_crossVector(landmarks_datatype::coordinate3d_t* _landmark3d)
+{
+    const landmarks_datatype::coordinate3d_t a = _landmark3d[start_crossVector_index_] - _landmark3d[start_keypoint_index_];
+    const landmarks_datatype::coordinate3d_t b = _landmark3d[end_crossVector_index_] - _landmark3d[start_keypoint_index_];
+
+    crossVector = landmarks_datatype::cross_product(a, b);
+#ifdef PRINT_DEBUG
+    std::puts("init_crossVector: crossVector");
+    std::cout << crossVector;
+#endif
+}
+
+void landmarks_to_shm::gesture::norm_root(landmarks_datatype::coordinate3d_t* _landmark3d)
+{
+    landmarks_datatype::coordinate3d_t root = _landmark3d[start_keypoint_index_];
+    _landmark3d[0] = {0.f, 0.f, 0.f};
+    for(int i=1; i<landmarks_datatype::norm_landmark_size; i++){
+        _landmark3d[i] = _landmark3d[i] - root;
+    }
+#ifdef PRINT_DEBUG
+    std::puts("norm_root: _landmark3d");
+    for(int i=0; i<21; i++){
+        std::cout << i << " " <<  _landmark3d[i];
+    }
+#endif
+}
+
+float landmarks_to_shm::gesture::cosine_angle3d(
+    landmarks_datatype::coordinate3d_t a, landmarks_datatype::coordinate3d_t b, landmarks_datatype::coordinate3d_t c)
+{
+    const landmarks_datatype::coordinate3d_t x = a - b;
+    const landmarks_datatype::coordinate3d_t y = c - b;
+    float const cosine = landmarks_datatype::dot_product3d(x, y) / (x.distance3d() * y.distance3d());
+#ifdef PRINT_DEBUG
+    std::puts("cosine_angle3d: x, y, cosine, x.distance, y.distance");
+    std::cout << x << " " << y << " " << cosine << " " << x.distance3d() << " " << y.distance3d() << "\n";
+#endif
+    return acosf(cosine);
+}
+
+void landmarks_to_shm::gesture::init_angle3d(landmarks_datatype::coordinate3d_t* _landmark3d)
+{
+    for(int i=0; i<cmp_angle_joints_num_; i++){
+        int joint = cmp_angle_joints_[i];
+        _landmark3d[joint].angle = cosine_angle3d(_landmark3d[joint-1], _landmark3d[joint], _landmark3d[joint+1]);
+    }
+}
+
+void landmarks_to_shm::gesture::init_cmp_angle_joints(void)
+{
+    cmp_angle_joints_ = new int [cmp_angle_joints_num_];
+    for(int i=0; i<cmp_angle_joints_num_; i++){
+        cmp_angle_joints_[i] = (i%3) + (i/3)*4 + 1;
+    }
+}
+
+void landmarks_to_shm::gesture::delete_cmp_angle_joints(void)
+{
+    delete cmp_angle_joints_;
 }

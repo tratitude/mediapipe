@@ -4,16 +4,17 @@
 #include <cmath>
 #include <string>
 #include <limits>
+#include <iostream>
 
-//#define THREE_D
+#define THREE_D
 #define FLOAT_MIN 1e-10
 
 namespace landmarks_datatype{
     struct coordinate3d_t{
-        float x, y, z;
+        float x, y, z, angle;
 
-        coordinate3d_t(float _x = 0.0, float _y = 0.0, float _z = 0.0)
-            :x(_x), y(_y), z(_z){}
+        coordinate3d_t(float _x = 0.f, float _y = 0.f, float _z = 0.f, float _angle = 0.f)
+            :x(_x), y(_y), z(_z), angle(_angle){}
 
         bool operator==(const coordinate3d_t p)
         {
@@ -25,7 +26,38 @@ namespace landmarks_datatype{
             x = p.x; y = p.y; z = p.z;
             return *this;
         }
-        
+
+        float distance(void) const
+        {
+            float total = 0.f;
+            if(fabs(x) > FLOAT_MIN)
+                total += x*x;
+            if(fabs(y) > FLOAT_MIN)
+                total += y*y;
+            return (sqrtf(total));
+        }
+
+        float distance3d(void) const
+        {
+            float total = 0.f;
+            if(fabs(x) > FLOAT_MIN)
+                total += x*x;
+            if(fabs(y) > FLOAT_MIN)
+                total += y*y;
+            if(fabs(z) > FLOAT_MIN)
+                total += z*z;
+            return (sqrtf(total));
+        }
+/*
+        // cross product axb
+        coordinate3d_t& cross(const coordinate3d_t &a, const coordinate3d_t &b)
+        {
+            x = a.y*b.z - a.z*b.y;
+            y = a.z*b.x - a.x*b.z;
+            z = a.x*b.y - a.y*b.x;
+            return *this;
+        }
+*/
     #ifndef THREE_D
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
@@ -48,17 +80,7 @@ namespace landmarks_datatype{
         {
             return coordinate3d_t(x*c, y*c, z);
         }
-
-        float distance(void)
-        {
-            float total = 0.f;
-            if(fabs(x) > FLOAT_MIN)
-                total += x*x;
-            if(fabs(y) > FLOAT_MIN)
-                total += y*y;
-            return (sqrtf(total));
-        }
-    #elif
+    #else
         coordinate3d_t operator+(const coordinate3d_t &p) const
         {
             return coordinate3d_t(x+p.x, y+p.y, z+p.z);
@@ -80,18 +102,6 @@ namespace landmarks_datatype{
         {
             return coordinate3d_t(x*c, y*c, z*c);
         }
-
-        float distance(void)
-        {
-            float total = 0.f;
-            if(fabs(x) > FLOAT_MIN)
-                total += x*x;
-            if(fabs(y) > FLOAT_MIN)
-                total += y*y;
-            if(fabs(z) > FLOAT_MIN)
-                total += z*z;
-            return (cbrtf(total));
-        }
     #endif
     };
 
@@ -107,5 +117,9 @@ namespace landmarks_datatype{
     extern const char *bbCentral_name;
     extern const coordinate3d_t image_size;
     extern const char *gesture_path;
+
+    coordinate3d_t cross_product(const coordinate3d_t &a, const coordinate3d_t &b);
+    float dot_product3d(const coordinate3d_t &a, const coordinate3d_t &b);
+    std::ostream& operator <<(std::ostream& os, const coordinate3d_t &p);
 }
 #endif

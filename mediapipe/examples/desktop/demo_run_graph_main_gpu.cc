@@ -44,9 +44,9 @@
 #include <thread>
 #include <ctime>
 
-//#define IMSHOW_ENABLE
+#define IMSHOW_ENABLE
 //#define FPS_TEST
-#define FPS60
+//#define FPS60
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
@@ -268,8 +268,8 @@ struct timespec diff(struct timespec start, struct timespec end) {
     // shmObj, gesObj is global object
     gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
     
-    float match_gesture;
-    gesObj.similarity(&match_gesture);
+    //float match_gesture = gesObj.similarity();
+    float match_gesture = gesObj.angle_similarity();
 
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.find<landmarks_datatype::coordinate3d_t>(
