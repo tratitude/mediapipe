@@ -73,43 +73,27 @@ void print_gesture_shm()
 
 int main()
 {
-// print gesture picture
-    //print_gesture();
-
-// print gesture picture from shm
-/*
-    while(true){
-        char c; std::cin >> c;
-        print_gesture_shm();
+    char menu_select;
+    std::puts("p: print gesture picture");
+    std::puts("s: print gesture picture from shm");
+    std::puts("d: define gesture");
+    std::puts("c: calculate defined gesture similarity");
+    while(std::cin >> menu_select){
+        switch(menu_select){
+            case 'p':
+                print_gesture();
+                break;
+            case 's':
+                print_gesture_shm();
+                break;
+            case 'd':
+                ges.store_gestures3d(".");
+                break;
+            case 'c':
+                ges.load_resize_rotate_gestures3d(".");
+                ges.gesture_similarity_test();
+                break;
+        }
     }
-*/
-// define gesture
-    ges.store_gestures3d(".");
-
-// calculate defined gesture similarity
-/*
-    ges.load_resize_rotate_gestures3d(".");
-    ges.gesture_similarity_test();
-*/
-// test shm
-/*
-    //Open the managed segment
-    boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_or_create, 
-        landmarks_datatype::shm_name, 
-        landmarks_datatype::shm_size);
-
-    //Find the vector using the c-string name
-    landmarks_datatype::coordinate3d_t *norm_landmark3d_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).first;
-
-    ges.resize(norm_landmark3d_ptr);
-    ges.rotate(norm_landmark3d_ptr);
-
-    //std::puts("after");
-    for(int i=0; i<21; i++){
-        std::cout << norm_landmark3d_ptr[i].x << " " << norm_landmark3d_ptr[i].y * (-1) << "\n";
-    }
-*/
     return 0;
 }
