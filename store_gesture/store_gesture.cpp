@@ -47,13 +47,12 @@ void print_gesture_shm()
 
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_or_create, 
-        landmarks_datatype::shm_name, 
+        boost::interprocess::open_or_create, ges.shm_name_, 
         landmarks_datatype::shm_size);
 
     //Find the vector using the c-string name
     landmarks_datatype::coordinate3d_t *norm_landmark3d_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).first;
+        ges.landmark_shm_name_).first;
     ges.resize(norm_landmark3d_ptr);
     ges.norm_root(norm_landmark3d_ptr);
 #ifndef THREE_D

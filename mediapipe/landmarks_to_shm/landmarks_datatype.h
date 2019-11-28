@@ -113,8 +113,11 @@ namespace landmarks_datatype{
     extern const int norm_landmark_size;
     extern const int shm_size;
     extern const char *norm_landmark_name;
+    extern const char *norm_landmark_name_second;
     extern const char *shm_name;
+    extern const char *shm_name_second;
     extern const char *bbCentral_name;
+    extern const char *bbCentral_name_second;
     extern const coordinate3d_t image_size;
     extern const char *gesture_path;
 
