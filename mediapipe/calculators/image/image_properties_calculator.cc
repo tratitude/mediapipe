@@ -15,8 +15,6 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
 
-#include <iostream>
-
 #if !defined(MEDIAPIPE_DISABLE_GPU)
 #include "mediapipe/gpu/gpu_buffer.h"
 #endif  //  !MEDIAPIPE_DISABLE_GPU
@@ -86,7 +84,7 @@ class ImagePropertiesCalculator : public CalculatorBase {
     cc->Outputs().Tag("SIZE").AddPacket(
         MakePacket<std::pair<int, int>>(width, height)
             .At(cc->InputTimestamp()));
-    std::cout << "width " << width << " height " << height << "\n";
+
     return ::mediapipe::OkStatus();
   }
 };

@@ -3,30 +3,34 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <cstring>
 #include "landmarks_to_shm.h"
 
-landmarks_to_shm::shm::shm(void)
+landmarks_to_shm::shm::shm(const char _landmark_shm_name[], const char _bbCentral_shm_name[], const char _shm_name[])
 {
-    boost::interprocess::shared_memory_object::remove(
-        landmarks_datatype::shm_name);
+    std::strncpy(landmark_shm_name_, _landmark_shm_name, 10);
+    std::strncpy(bbCentral_shm_name_, _bbCentral_shm_name, 10);
+    std::strncpy(shm_name_, _shm_name, 10);
+
+    boost::interprocess::shared_memory_object::remove(shm_name_);
 
     //Create a new segment with given name and size
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::create_only, 
-        landmarks_datatype::shm_name, 
+        boost::interprocess::open_or_create, 
+        shm_name_, 
         landmarks_datatype::shm_size);
 // normLand3d
     //Construct an array named norm_landmark_name in shared memory
     landmarks_datatype::coordinate3d_t *normLand3d = 
         segment.construct<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name)
+        landmark_shm_name_)
         [landmarks_datatype::norm_landmark_size]();
 
 // bbCentral
 // x=x_center, y=y_center, z=match_gesture
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.construct<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::bbCentral_name)[1]();
+        bbCentral_shm_name_)[1]();
 
 #ifdef PRINT_DEBUG
     std::puts("In shm");
@@ -41,16 +45,15 @@ landmarks_to_shm::shm::~shm()
 */
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_only, 
-        landmarks_datatype::shm_name);
+        boost::interprocess::open_only, shm_name_);
 
     //When done, destroy norm_landmark from the segment
     segment.destroy<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name);
+        landmark_shm_name_);
     
     //When done, destroy norm_landmark from the segment
     segment.destroy<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::bbCentral_name);
+        bbCentral_shm_name_);
 
 #ifdef PRINT_DEBUG
     std::puts("In ~shm");
@@ -61,8 +64,7 @@ void landmarks_to_shm::shm::print_shm(const char *_val_shm_name)
 {
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-      boost::interprocess::open_copy_on_write, 
-      landmarks_datatype::shm_name);
+      boost::interprocess::open_copy_on_write, shm_name_);
 
     //Find the vector using the c-string name
     landmarks_datatype::coordinate3d_t *val = 
@@ -85,12 +87,12 @@ void landmarks_to_shm::shm::print_shm(const char *_val_shm_name)
 
 void landmarks_to_shm::shm::print_shm_norm_landmark3d(void)
 {
-    print_shm(landmarks_datatype::norm_landmark_name);
+    print_shm(landmark_shm_name_);
 }
 
 void landmarks_to_shm::shm::print_shm_bbCentral(void)
 {
-    print_shm(landmarks_datatype::bbCentral_name);
+    print_shm(bbCentral_shm_name_);
 }
 
 void landmarks_to_shm::shm::get_norm_landmark3d_ptr(
@@ -98,13 +100,12 @@ void landmarks_to_shm::shm::get_norm_landmark3d_ptr(
 {
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_or_create, 
-        landmarks_datatype::shm_name, 
+        boost::interprocess::open_or_create, shm_name_, 
         landmarks_datatype::shm_size);
 
     //Find the vector using the c-string name
     _norm_landmark3d_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).first;
+        landmark_shm_name_).first;
 
 #ifdef PRINT_DEBUG
     std::puts("In get_norm_landmark3d_ptr");
@@ -116,13 +117,12 @@ void landmarks_to_shm::shm::get_bbCentral_ptr(landmarks_datatype::coordinate3d_t
 {
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_or_create, 
-        landmarks_datatype::shm_name, 
+        boost::interprocess::open_or_create, shm_name_, 
         landmarks_datatype::shm_size);
 
     //Find the vector using the c-string name
     _bbCentral_ptr = segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::bbCentral_name).first;
+        bbCentral_shm_name_).first;
 
 #ifdef PRINT_DEBUG
     std::puts("In get_bbCentral_ptr");
@@ -132,8 +132,11 @@ void landmarks_to_shm::shm::get_bbCentral_ptr(landmarks_datatype::coordinate3d_t
 
 //****************************************************
 
-landmarks_to_shm::gesture::gesture(void)
+landmarks_to_shm::gesture::gesture(const char _landmark_shm_name[], const char _bbCentral_shm_name[], const char _shm_name[])
 {
+    std::strncpy(landmark_shm_name_, _landmark_shm_name, 10);
+    std::strncpy(bbCentral_shm_name_, _bbCentral_shm_name, 10);
+    std::strncpy(shm_name_, _shm_name, 10);
     init_gestures3d();
     init_norm_landmark3d();
     init_cmp_angle_joints();
@@ -188,16 +191,15 @@ void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::st
 
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_copy_on_write, 
-        landmarks_datatype::shm_name);
+        boost::interprocess::open_copy_on_write, shm_name_);
 
     //Find the vector using the c-string name
     landmarks_datatype::coordinate3d_t *normLand3d = 
         segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).first;
+        landmark_shm_name_).first;
 
     int normLand3d_size = segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).second;
+        landmark_shm_name_).second;
     
     for(int i=0; i<normLand3d_size; i++){
         gesture_file << i << " " << normLand3d[i];

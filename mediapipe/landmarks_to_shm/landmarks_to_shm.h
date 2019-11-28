@@ -14,7 +14,7 @@
 namespace landmarks_to_shm{
     class shm{
     public:
-        shm(void);
+        shm(const char _landmark_shm_name[], const char _bbCentral_shm_name[], const char _shm_name[]);
         ~shm();
         // seg fault
         void get_norm_landmark3d_ptr(landmarks_datatype::coordinate3d_t* _norm_landmark3d_ptr);
@@ -22,11 +22,15 @@ namespace landmarks_to_shm{
         void print_shm_norm_landmark3d(void);
         void print_shm_bbCentral(void);
         void print_shm(const char *_val_shm_name);
+
+        char landmark_shm_name_[10];
+        char bbCentral_shm_name_[10];
+        char shm_name_[10];
     };
 
     class gesture{
     public:
-        gesture(void);
+        gesture(const char _landmark_shm_name[], const char _bbCentral_shm_name[], const char _shm_name[]);
         ~gesture();
         void store_gestures3d(const std::string &_dir);
         void store_gestures3d(int _gesture_num, const std::string &_dir);
@@ -62,6 +66,10 @@ namespace landmarks_to_shm{
         inline float NormalizeRadians(float angle) {
             return angle - 2 * M_PI * std::floor((angle - (-M_PI)) / (2 * M_PI));
         }
+
+        char landmark_shm_name_[10];
+        char bbCentral_shm_name_[10];
+        char shm_name_[10];
 
     private:
         void init_gesture_num(void);

@@ -4,10 +4,12 @@ namespace landmarks_datatype{
     const int norm_landmark_size = 21;
     // norm_landmark 4*3*21=252 bytes, bbCentral 4*3=12 bytes
     const int shm_size = 1024;
-    const char *norm_landmark_name = "NormLandArr";
-    const char *norm_landmark_name_second = "NormLandArrSecond";
-    const char *shm_name = "NormLandmarks";
-    const char *bbCentral_name = "BoundingBoxCentral";
+    const char *norm_landmark_name = "NL1";
+    const char *norm_landmark_name_second = "NL2";
+    const char *shm_name = "NeoHand1";
+    const char *shm_name_second = "NeoHand2";
+    const char *bbCentral_name = "BB1";
+    const char *bbCentral_name_second = "BB2";
     const coordinate3d_t image_size = {256, 256, 1};
     const char *gesture_path = "/home/fdmdkw/code/project/mediapipe/store_gesture";
 

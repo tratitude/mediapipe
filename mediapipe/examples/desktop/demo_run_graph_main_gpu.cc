@@ -56,7 +56,6 @@ constexpr char kWindowName[] = "MediaPipe";
 constexpr char kWindowName_second[] = "MediaPipe_second";
 constexpr char kLandmarksStream[] = "hand_landmarks";
 constexpr char kRectStream[] = "hand_rect";
-constexpr char kImageSizeTag[] = "image_size";
 
 DEFINE_string(
     calculator_graph_config_file, "",
@@ -69,8 +68,12 @@ DEFINE_string(output_video_path, "",
               "If not provided, show result in a window.");
 //****************************************************************************************/
 // Warring! Global varible
-landmarks_to_shm::shm shmObj;
-landmarks_to_shm::gesture gesObj;
+landmarks_to_shm::shm shmObj(landmarks_datatype::norm_landmark_name, landmarks_datatype::bbCentral_name, landmarks_datatype::shm_name);
+landmarks_to_shm::gesture gesObj(landmarks_datatype::norm_landmark_name, landmarks_datatype::bbCentral_name, landmarks_datatype::shm_name);
+#ifdef SECOND_HAND
+landmarks_to_shm::shm shmObj_second(landmarks_datatype::norm_landmark_name_second, landmarks_datatype::bbCentral_name_second, landmarks_datatype::shm_name_second);
+landmarks_to_shm::gesture gesObj_second(landmarks_datatype::norm_landmark_name_second, landmarks_datatype::bbCentral_name_second, landmarks_datatype::shm_name_second);
+#endif
 double input_video_fps = 0.f;
 double gesture_fps = 0.f;
 double gesture_time = 0.f;
@@ -192,10 +195,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
   // rect stream
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_rect,
             graph.AddOutputStreamPoller(kRectStream));
-/*
-  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_imageSize,
-            graph.AddOutputStreamPoller(kImageSizeTag));
-*/
+
   MP_RETURN_IF_ERROR(graph.StartRun({}));
 
 #ifdef SECOND_HAND
@@ -270,12 +270,10 @@ struct timespec diff(struct timespec start, struct timespec end) {
     mediapipe::Packet imageSize_packet;
     if (!poller_landmark.Next(&landmark_packet)) break;
     if (!poller_rect.Next(&rect_packet)) break;
-    //if (!poller_imageSize.Next(&imageSize_packet)) break;
 
     std::unique_ptr<mediapipe::ImageFrame> output_frame;
     auto& output_landmarks = landmark_packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
     auto& output_rect = rect_packet.Get<::mediapipe::NormalizedRect>();
-    //auto& output_imageSize = imageSize_packet.Get<std::pair<int, int>>();
 
   #ifdef IMSHOW_ENABLE
     // Convert GpuBuffer to ImageFrame.
@@ -325,7 +323,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
     cv::Point rect_center(int(output_rect.x_center()*cam_size.width), int(output_rect.y_center()*cam_size.height));
     cv::Point topLeft(camera_frame.size());
     cv::Point bottomRight(0, 0);
-    std::cout << output_rect.width() << " " << output_rect.height() << "\n";
+    
     for(int landmark_cnt = 0; landmark_cnt < landmarks_datatype::norm_landmark_size; landmark_cnt++){
       cv::Point p(int((output_landmarks[landmark_cnt].x()-0.5)*rect_size.width), int((output_landmarks[landmark_cnt].y()-0.5)*rect_size.height));
       p = p + rect_center;
@@ -336,7 +334,6 @@ struct timespec diff(struct timespec start, struct timespec end) {
       bottomRight = {std::max(bottomRight.x, p.x), std::max(bottomRight.y, p.y)};
     }
 
-    std::cout << rect_center << topLeft << bottomRight << "\n";
     cv::Rect mask_rect(topLeft.x, topLeft.y, bottomRight.x-topLeft.x, bottomRight.y-topLeft.y);
     
     mask(mask_rect).setTo(255);
@@ -416,14 +413,13 @@ struct timespec diff(struct timespec start, struct timespec end) {
     // restore landmark to shm array
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_or_create, 
-        landmarks_datatype::shm_name,
+        boost::interprocess::open_or_create, shmObj.shm_name_,
         landmarks_datatype::shm_size);
 
     //Find the vector using the c-string name
     landmarks_datatype::coordinate3d_t *norm_landmark = 
         segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::norm_landmark_name).first;
+        shmObj.landmark_shm_name_).first;
     for (int counter = 0; counter<landmarks_datatype::norm_landmark_size; counter++) {
       norm_landmark[counter] = {output_landmarks[counter].x(), output_landmarks[counter].y(), output_landmarks[counter].z()};
     }
@@ -436,9 +432,40 @@ struct timespec diff(struct timespec start, struct timespec end) {
 
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.find<landmarks_datatype::coordinate3d_t>(
-        landmarks_datatype::bbCentral_name).first;
+        shmObj.bbCentral_shm_name_).first;
     // x=x_center, y=y_center, z=match_gesture
     bbCentral[0] = {output_rect.x_center(), output_rect.y_center(), match_gesture};
+
+  #ifdef SECOND_HAND
+    // restore landmark to shm array
+    //Open the managed segment
+    boost::interprocess::managed_shared_memory segment_second(
+        boost::interprocess::open_or_create, shmObj_second.shm_name_,
+        landmarks_datatype::shm_size);
+
+    //Find the vector using the c-string name
+    landmarks_datatype::coordinate3d_t *norm_landmark_second = 
+        segment_second.find<landmarks_datatype::coordinate3d_t>(
+        shmObj_second.landmark_shm_name_).first;
+    for (int counter = 0; counter<landmarks_datatype::norm_landmark_size; counter++) {
+      norm_landmark_second[counter] = {output_landmarks_second[counter].x(), output_landmarks_second[counter].y(), output_landmarks_second[counter].z()};
+    }
+
+    // shmObj, gesObj is global object
+    gesObj_second.load_resize_rotate_norm_landmark3d(norm_landmark_second);
+    
+    //float match_gesture = gesObj.similarity();
+    float match_gesture_second = gesObj_second.angle_similarity();
+
+    landmarks_datatype::coordinate3d_t *bbCentral_second = 
+        segment_second.find<landmarks_datatype::coordinate3d_t>(
+        shmObj_second.bbCentral_shm_name_).first;
+    // x=x_center, y=y_center, z=match_gesture
+    bbCentral_second[0] = {output_rect_second.x_center(), output_rect_second.y_center(), match_gesture_second};
+
+
+  #endif
+
   #ifdef FPS_TEST
     // count gesture fps
     //if(gesture_cnt < ULLONG_MAX-2){
