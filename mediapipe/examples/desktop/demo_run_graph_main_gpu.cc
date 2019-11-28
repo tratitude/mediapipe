@@ -45,11 +45,6 @@
 #include <ctime>
 #include <thread>
 
-#define IMSHOW_ENABLE
-//#define FPS_TEST
-//#define FPS60
-#define SECOND_HAND
-
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
