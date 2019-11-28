@@ -45,11 +45,6 @@
 #include <ctime>
 #include <thread>
 
-#define IMSHOW_ENABLE
-//#define FPS_TEST
-//#define FPS60
-#define SECOND_HAND
-
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
@@ -323,19 +318,28 @@ struct timespec diff(struct timespec start, struct timespec end) {
     cv::Point rect_center(int(output_rect.x_center()*cam_size.width), int(output_rect.y_center()*cam_size.height));
     cv::Point topLeft(camera_frame.size());
     cv::Point bottomRight(0, 0);
-    
+    cv::Point mask_offset(40, 30);
+  
     for(int landmark_cnt = 0; landmark_cnt < landmarks_datatype::norm_landmark_size; landmark_cnt++){
       cv::Point p(int((output_landmarks[landmark_cnt].x()-0.5)*rect_size.width), int((output_landmarks[landmark_cnt].y()-0.5)*rect_size.height));
       p = p + rect_center;
 
-      p.x = std::max(0, p.x); p.x = std::min(cam_size.width-1, p.x);
-      p.y = std::max(0, p.y); p.y = std::min(cam_size.height-1, p.y);
+      p.x = std::max(0, p.x - mask_offset.x); p.x = std::min(cam_size.width-1, p.x + mask_offset.x);
+      p.y = std::max(0, p.y - mask_offset.y); p.y = std::min(cam_size.height-1, p.y + mask_offset.y);
       topLeft = {std::min(topLeft.x, p.x), std::min(topLeft.y, p.y)};
       bottomRight = {std::max(bottomRight.x, p.x), std::max(bottomRight.y, p.y)};
     }
 
     cv::Rect mask_rect(topLeft.x, topLeft.y, bottomRight.x-topLeft.x, bottomRight.y-topLeft.y);
-    
+  /*
+    topLeft.x = rect_center.x - int(rect_size.width/2) < 0 ? 0 : rect_center.x - int(rect_size.width/2);
+    topLeft.y = rect_center.y - int(rect_size.height/2) < 0 ? 0 : rect_center.y - int(rect_size.height/2);
+    bottomRight.x = rect_center.x + int(rect_size.width/2) >= rect_size.width ? 0 : rect_center.x + int(rect_size.width/2);
+    bottomRight.y = rect_center.y + int(rect_size.height/2) >= rect_size.height ? 0 : rect_center.y + int(rect_size.height/2);
+    int w = bottomRight.x - topLeft.x < 0 ? 0 : bottomRight.x - topLeft.x;
+    int h = bottomRight.y - topLeft.y < 0 ? 0 : bottomRight.y - topLeft.y;
+    cv::Rect mask_rect(topLeft.x, topLeft.y, w, h);
+  */
     mask(mask_rect).setTo(255);
     cv::Mat img1, img2, img3;
     img1 = input_frame_mat_second(mask_rect);
@@ -489,6 +493,15 @@ struct timespec diff(struct timespec start, struct timespec end) {
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
+
+#ifdef SECOND_HAND
+  LOG(INFO) << "Shutting down second.";
+  if (writer_second.isOpened()) writer_second.release();
+  MP_RETURN_IF_ERROR(graph_second.CloseInputStream(kInputStream));
+
+  return graph_second.WaitUntilDone();
+#endif
+
   return graph.WaitUntilDone();
 }
 
@@ -498,6 +511,12 @@ int main(int argc, char** argv) {
   // relative path failed
   //gesObj.load_gesture("../../../store_gesture");
   gesObj.print_gestures3d();
+
+#ifdef SECOND_HAND
+  std::puts("second load gestures3d");
+  gesObj_second.load_resize_rotate_gestures3d(landmarks_datatype::gesture_path);
+  gesObj_second.print_gestures3d();
+#endif
 
   // maybe need run similarity after getting landmark every frame
   //std::thread similarity(&landmarks_to_shm::gesture::similarity, &ges);

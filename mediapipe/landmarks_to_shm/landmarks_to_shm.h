@@ -9,7 +9,6 @@
 
 #include "landmarks_datatype.h"
 
-//#define PRINT_DEBUG
 
 namespace landmarks_to_shm{
     class shm{

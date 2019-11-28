@@ -6,8 +6,17 @@
 #include <limits>
 #include <iostream>
 
-#define THREE_D
 #define FLOAT_MIN 1e-10
+
+//*********************************/
+// Config Options
+#define THREE_D
+//#define PRINT_DEBUG
+#define IMSHOW_ENABLE
+//#define FPS_TEST
+//#define FPS60
+#define SECOND_HAND
+//*********************************/
 
 namespace landmarks_datatype{
     struct coordinate3d_t{
