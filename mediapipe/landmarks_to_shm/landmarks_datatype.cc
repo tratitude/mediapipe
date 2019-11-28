@@ -5,6 +5,7 @@ namespace landmarks_datatype{
     // norm_landmark 4*3*21=252 bytes, bbCentral 4*3=12 bytes
     const int shm_size = 1024;
     const char *norm_landmark_name = "NormLandArr";
+    const char *norm_landmark_name_second = "NormLandArrSecond";
     const char *shm_name = "NormLandmarks";
     const char *bbCentral_name = "BoundingBoxCentral";
     const coordinate3d_t image_size = {256, 256, 1};

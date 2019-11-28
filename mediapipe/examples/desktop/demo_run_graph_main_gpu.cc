@@ -43,16 +43,20 @@
 #include <iostream>
 #include <thread>
 #include <ctime>
+#include <thread>
 
 #define IMSHOW_ENABLE
 //#define FPS_TEST
 //#define FPS60
+#define SECOND_HAND
 
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
+constexpr char kWindowName_second[] = "MediaPipe_second";
 constexpr char kLandmarksStream[] = "hand_landmarks";
 constexpr char kRectStream[] = "hand_rect";
+constexpr char kImageSizeTag[] = "image_size";
 
 DEFINE_string(
     calculator_graph_config_file, "",
@@ -106,6 +110,18 @@ struct timespec diff(struct timespec start, struct timespec end) {
   mediapipe::GlCalculatorHelper gpu_helper;
   gpu_helper.InitializeForTest(graph.GetGpuResources().get());
 
+#ifdef SECOND_HAND
+  LOG(INFO) << "Initialize the calculator graph_second.";
+  mediapipe::CalculatorGraph graph_second;
+  MP_RETURN_IF_ERROR(graph_second.Initialize(config));
+
+  LOG(INFO) << "Initialize the GPU.";
+  ASSIGN_OR_RETURN(auto gpu_resources_second, mediapipe::GpuResources::Create());
+  MP_RETURN_IF_ERROR(graph_second.SetGpuResources(std::move(gpu_resources_second)));
+  mediapipe::GlCalculatorHelper gpu_helper_second;
+  gpu_helper_second.InitializeForTest(graph_second.GetGpuResources().get());
+#endif
+
   LOG(INFO) << "Initialize the camera or load the video.";
   cv::VideoCapture capture(cv::CAP_DSHOW + 0);
   const bool load_video = !FLAGS_input_video_path.empty();
@@ -143,6 +159,27 @@ struct timespec diff(struct timespec start, struct timespec end) {
     cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
   }
 
+#ifdef SECOND_HAND
+  cv::VideoWriter writer_second;
+  const bool save_video_second = !FLAGS_output_video_path.empty();
+  if (save_video_second) {
+    LOG(INFO) << "Prepare video writer_second.";
+    cv::Mat test_frame_second;
+    capture.read(test_frame_second);                    // Consume first frame.
+    capture.set(cv::CAP_PROP_POS_AVI_RATIO, 0);  // Rewind to beginning.
+    writer_second.open(FLAGS_output_video_path,
+              #ifdef FPS60
+                mediapipe::fourcc('M', 'J', 'P', 'G'),  // .mjpg
+              #else
+                mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
+              #endif
+                capture.get(cv::CAP_PROP_FPS), test_frame_second.size());
+    RET_CHECK(writer_second.isOpened());
+  } else {
+    cv::namedWindow(kWindowName_second, /*flags=WINDOW_AUTOSIZE*/ 1);
+  }
+#endif
+
   LOG(INFO) << "Start running the calculator graph.";
 #ifdef IMSHOW_ENABLE
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
@@ -155,12 +192,33 @@ struct timespec diff(struct timespec start, struct timespec end) {
   // rect stream
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_rect,
             graph.AddOutputStreamPoller(kRectStream));
-
+/*
+  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_imageSize,
+            graph.AddOutputStreamPoller(kImageSizeTag));
+*/
   MP_RETURN_IF_ERROR(graph.StartRun({}));
+
+#ifdef SECOND_HAND
+  LOG(INFO) << "Start running the calculator graph_second.";
+#ifdef IMSHOW_ENABLE
+  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_second,
+                   graph_second.AddOutputStreamPoller(kOutputStream));
+#endif
+  // hand landmarks stream
+  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_landmark_second,
+            graph_second.AddOutputStreamPoller(kLandmarksStream));
+  
+  // rect stream
+  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller_rect_second,
+            graph_second.AddOutputStreamPoller(kRectStream));
+
+  MP_RETURN_IF_ERROR(graph_second.StartRun({}));
+#endif
 
   LOG(INFO) << "Start grabbing and processing frames.";
 
   size_t frame_timestamp = 0;
+  size_t frame_timestamp_second = 0;
   bool grab_frames = true;
 #ifdef FPS_TEST
   // get fps
@@ -205,18 +263,20 @@ struct timespec diff(struct timespec start, struct timespec end) {
     // Get the graph result packet, or stop if that fails.
   #ifdef IMSHOW_ENABLE
     mediapipe::Packet packet;
+    if (!poller.Next(&packet)) break;
   #endif
     mediapipe::Packet landmark_packet;
     mediapipe::Packet rect_packet;
-  #ifdef IMSHOW_ENABLE
-    if (!poller.Next(&packet)) break;
-  #endif
+    mediapipe::Packet imageSize_packet;
     if (!poller_landmark.Next(&landmark_packet)) break;
     if (!poller_rect.Next(&rect_packet)) break;
+    //if (!poller_imageSize.Next(&imageSize_packet)) break;
 
     std::unique_ptr<mediapipe::ImageFrame> output_frame;
     auto& output_landmarks = landmark_packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
     auto& output_rect = rect_packet.Get<::mediapipe::NormalizedRect>();
+    //auto& output_imageSize = imageSize_packet.Get<std::pair<int, int>>();
+
   #ifdef IMSHOW_ENABLE
     // Convert GpuBuffer to ImageFrame.
     MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
@@ -249,7 +309,110 @@ struct timespec diff(struct timespec start, struct timespec end) {
       const int pressed_key = cv::waitKey(1);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
+  #endif // IMSHOW_ENABLE
+  
+  #ifdef SECOND_HAND
+    // second hand
+    auto input_frame_second = absl::make_unique<mediapipe::ImageFrame>(
+        mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
+        mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+    cv::Mat input_frame_mat_second = mediapipe::formats::MatView(input_frame_second.get());
+    camera_frame.copyTo(input_frame_mat_second);
+  
+    cv::Size cam_size = camera_frame.size();
+    cv::Mat mask = cv::Mat::zeros(cam_size,CV_8UC1);
+    cv::Size rect_size(int(output_rect.width()*cam_size.width), int(output_rect.height()*cam_size.height));
+    cv::Point rect_center(int(output_rect.x_center()*cam_size.width), int(output_rect.y_center()*cam_size.height));
+    cv::Point topLeft(camera_frame.size());
+    cv::Point bottomRight(0, 0);
+    std::cout << output_rect.width() << " " << output_rect.height() << "\n";
+    for(int landmark_cnt = 0; landmark_cnt < landmarks_datatype::norm_landmark_size; landmark_cnt++){
+      cv::Point p(int((output_landmarks[landmark_cnt].x()-0.5)*rect_size.width), int((output_landmarks[landmark_cnt].y()-0.5)*rect_size.height));
+      p = p + rect_center;
+
+      p.x = std::max(0, p.x); p.x = std::min(cam_size.width-1, p.x);
+      p.y = std::max(0, p.y); p.y = std::min(cam_size.height-1, p.y);
+      topLeft = {std::min(topLeft.x, p.x), std::min(topLeft.y, p.y)};
+      bottomRight = {std::max(bottomRight.x, p.x), std::max(bottomRight.y, p.y)};
+    }
+
+    std::cout << rect_center << topLeft << bottomRight << "\n";
+    cv::Rect mask_rect(topLeft.x, topLeft.y, bottomRight.x-topLeft.x, bottomRight.y-topLeft.y);
+    
+    mask(mask_rect).setTo(255);
+    cv::Mat img1, img2, img3;
+    img1 = input_frame_mat_second(mask_rect);
+		input_frame_mat_second.copyTo(img2, mask);
+		input_frame_mat_second.copyTo(img3);
+    img3.setTo(0,mask);
+    img3.copyTo(input_frame_mat_second);
+  
+    // Prepare and add graph input packet.
+    MP_RETURN_IF_ERROR(
+        gpu_helper_second.RunInGlContext([&input_frame_second, &frame_timestamp_second, &graph_second,
+                                   &gpu_helper_second]() -> ::mediapipe::Status {
+          // Convert ImageFrame to GpuBuffer.
+          auto texture = gpu_helper_second.CreateSourceTexture(*input_frame_second.get());
+          auto gpu_frame = texture.GetFrame<mediapipe::GpuBuffer>();
+          glFlush();
+          texture.Release();
+          // Send GPU image packet into the graph.
+          MP_RETURN_IF_ERROR(graph_second.AddPacketToInputStream(
+              kInputStream, mediapipe::Adopt(gpu_frame.release())
+                                .At(mediapipe::Timestamp(frame_timestamp_second++))));
+          return ::mediapipe::OkStatus();
+        }));
+    
+    // Get the graph result packet, or stop if that fails.
+  #ifdef IMSHOW_ENABLE
+    mediapipe::Packet packet_second;
+    if (!poller_second.Next(&packet_second)) break;
   #endif
+
+    mediapipe::Packet landmark_packet_second;
+    mediapipe::Packet rect_packet_second;
+    if (!poller_landmark_second.Next(&landmark_packet_second)) break;
+    if (!poller_rect_second.Next(&rect_packet_second)) break;
+
+    std::unique_ptr<mediapipe::ImageFrame> output_frame_second;
+    auto& output_landmarks_second = landmark_packet_second.Get<std::vector<::mediapipe::NormalizedLandmark>>();
+    auto& output_rect_second = rect_packet_second.Get<::mediapipe::NormalizedRect>();
+  
+  #ifdef IMSHOW_ENABLE
+    // Convert GpuBuffer to ImageFrame.
+    MP_RETURN_IF_ERROR(gpu_helper_second.RunInGlContext(
+        [&packet_second, &output_frame_second, &gpu_helper_second]() -> ::mediapipe::Status {
+          auto& gpu_frame = packet_second.Get<mediapipe::GpuBuffer>();
+          auto texture = gpu_helper_second.CreateSourceTexture(gpu_frame);
+          output_frame_second = absl::make_unique<mediapipe::ImageFrame>(
+              mediapipe::ImageFormatForGpuBufferFormat(gpu_frame.format()),
+              gpu_frame.width(), gpu_frame.height(),
+              mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+          gpu_helper_second.BindFramebuffer(texture);
+          const auto info =
+              mediapipe::GlTextureInfoForGpuBufferFormat(gpu_frame.format(), 0);
+          glReadPixels(0, 0, texture.width(), texture.height(), info.gl_format,
+                       info.gl_type, output_frame_second->MutablePixelData());
+          glFlush();
+          texture.Release();
+          return ::mediapipe::OkStatus();
+        }));
+
+    // Convert back to opencv for display or saving.
+    cv::Mat output_frame_mat_second = mediapipe::formats::MatView(output_frame_second.get());
+    cv::cvtColor(output_frame_mat_second, output_frame_mat_second, cv::COLOR_RGB2BGR);
+    if (save_video_second) {
+      writer_second.write(output_frame_mat_second);
+    } else {
+    
+      cv::imshow(kWindowName_second, output_frame_mat_second);
+      // Press any key to exit.
+      const int pressed_key = cv::waitKey(1);
+      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    }
+  #endif //#endif IMSHOW_ENABLE
+  #endif //#endif SECOND_HAND
+
     // restore landmark to shm array
     //Open the managed segment
     boost::interprocess::managed_shared_memory segment(
@@ -288,6 +451,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
     }
   #endif
   }
+
 #ifdef FPS_TEST
   // time end
   clock_gettime(CLOCK_MONOTONIC_COARSE, &end);
