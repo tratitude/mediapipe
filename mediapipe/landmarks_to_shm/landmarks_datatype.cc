@@ -1,4 +1,7 @@
 #include "landmarks_datatype.h"
+#include <cstdlib>
+#include <limits.h>
+#include <fstream>
 
 namespace landmarks_datatype{
     const int norm_landmark_size = 21;
@@ -11,7 +14,7 @@ namespace landmarks_datatype{
     const char *bbCentral_name = "BB1";
     const char *bbCentral_name_second = "BB2";
     const coordinate3d_t image_size = {256, 256, 1};
-    const char *gesture_path = "/home/fdmdkw/code/project/mediapipe/store_gesture";
+    char *gesture_path;
 
     coordinate3d_t cross_product(const coordinate3d_t &a, const coordinate3d_t &b)
     {
@@ -30,5 +33,13 @@ namespace landmarks_datatype{
     {
         os << p.x << " " << p.y << " " << p.z << " " << p.angle << "\n";
         return os;
+    }
+
+    void init_gesture_path(void)
+    {
+        // linux dependency
+        char *symlinkpath = "../mediapipe/store_gesture";
+        gesture_path = new char[PATH_MAX+1];
+        realpath(symlinkpath, gesture_path);
     }
 }

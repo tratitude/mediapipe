@@ -496,10 +496,9 @@ struct timespec diff(struct timespec start, struct timespec end) {
 }
 
 int main(int argc, char** argv) {
+  landmarks_datatype::init_gesture_path();
   // ges, shm are global object
   gesObj.load_resize_rotate_gestures3d(landmarks_datatype::gesture_path);
-  // relative path failed
-  //gesObj.load_gesture("../../../store_gesture");
   gesObj.print_gestures3d();
 
 #ifdef SECOND_HAND

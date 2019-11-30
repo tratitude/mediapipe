@@ -1,9 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "../mediapipe/landmarks_to_shm/landmarks_to_shm.h" 
+#include "../mediapipe/landmarks_to_shm/landmarks_to_shm.h"
+#include <cstdlib>
 
-landmarks_to_shm::gesture ges;
+landmarks_to_shm::gesture ges(
+    landmarks_datatype::norm_landmark_name, 
+    landmarks_datatype::bbCentral_name, 
+    landmarks_datatype::shm_name);
 
 void print_gesture()
 {
@@ -77,6 +81,7 @@ int main()
     std::puts("s: print gesture picture from shm");
     std::puts("d: define gesture");
     std::puts("c: calculate defined gesture similarity");
+    std::puts("q: quit");
     while(std::cin >> menu_select){
         switch(menu_select){
             case 'p':
@@ -91,6 +96,9 @@ int main()
             case 'c':
                 ges.load_resize_rotate_gestures3d(".");
                 ges.gesture_similarity_test();
+                break;
+            case 'q':
+                exit(EXIT_SUCCESS);
                 break;
         }
     }

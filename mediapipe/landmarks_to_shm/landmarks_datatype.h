@@ -12,8 +12,8 @@
 // Config Options
 #define THREE_D
 //#define PRINT_DEBUG
-#define IMSHOW_ENABLE
-//#define FPS_TEST
+//#define IMSHOW_ENABLE
+#define FPS_TEST
 //#define FPS60
 #define SECOND_HAND
 //*********************************/
@@ -128,10 +128,11 @@ namespace landmarks_datatype{
     extern const char *bbCentral_name;
     extern const char *bbCentral_name_second;
     extern const coordinate3d_t image_size;
-    extern const char *gesture_path;
+    extern char *gesture_path;
 
     coordinate3d_t cross_product(const coordinate3d_t &a, const coordinate3d_t &b);
     float dot_product3d(const coordinate3d_t &a, const coordinate3d_t &b);
     std::ostream& operator <<(std::ostream& os, const coordinate3d_t &p);
+    void init_gesture_path(void);
 }
 #endif
