@@ -314,15 +314,12 @@ struct timespec diff(struct timespec start, struct timespec end) {
   
     cv::Size cam_size = camera_frame.size();
     cv::Mat mask = cv::Mat::zeros(cam_size,CV_8UC1);
-    cv::Size rect_size(int(output_rect.width()*cam_size.width), int(output_rect.height()*cam_size.height));
-    cv::Point rect_center(int(output_rect.x_center()*cam_size.width), int(output_rect.y_center()*cam_size.height));
     cv::Point topLeft(camera_frame.size());
     cv::Point bottomRight(0, 0);
     cv::Point mask_offset(40, 30);
   
     for(int landmark_cnt = 0; landmark_cnt < landmarks_datatype::norm_landmark_size; landmark_cnt++){
-      cv::Point p(int((output_landmarks[landmark_cnt].x()-0.5)*rect_size.width), int((output_landmarks[landmark_cnt].y()-0.5)*rect_size.height));
-      p = p + rect_center;
+      cv::Point p(output_landmarks[landmark_cnt].x()*cam_size.width, output_landmarks[landmark_cnt].y()*cam_size.height);
 
       p.x = std::max(0, p.x - mask_offset.x); p.x = std::min(cam_size.width-1, p.x + mask_offset.x);
       p.y = std::max(0, p.y - mask_offset.y); p.y = std::min(cam_size.height-1, p.y + mask_offset.y);
@@ -331,15 +328,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
     }
 
     cv::Rect mask_rect(topLeft.x, topLeft.y, bottomRight.x-topLeft.x, bottomRight.y-topLeft.y);
-  /*
-    topLeft.x = rect_center.x - int(rect_size.width/2) < 0 ? 0 : rect_center.x - int(rect_size.width/2);
-    topLeft.y = rect_center.y - int(rect_size.height/2) < 0 ? 0 : rect_center.y - int(rect_size.height/2);
-    bottomRight.x = rect_center.x + int(rect_size.width/2) >= rect_size.width ? 0 : rect_center.x + int(rect_size.width/2);
-    bottomRight.y = rect_center.y + int(rect_size.height/2) >= rect_size.height ? 0 : rect_center.y + int(rect_size.height/2);
-    int w = bottomRight.x - topLeft.x < 0 ? 0 : bottomRight.x - topLeft.x;
-    int h = bottomRight.y - topLeft.y < 0 ? 0 : bottomRight.y - topLeft.y;
-    cv::Rect mask_rect(topLeft.x, topLeft.y, w, h);
-  */
+
     mask(mask_rect).setTo(255);
     cv::Mat img1, img2, img3;
     img1 = input_frame_mat_second(mask_rect);
