@@ -270,40 +270,6 @@ struct timespec diff(struct timespec start, struct timespec end) {
     auto& output_landmarks = landmark_packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
     auto& output_rect = rect_packet.Get<::mediapipe::NormalizedRect>();
 
-  #ifdef IMSHOW_ENABLE
-    // Convert GpuBuffer to ImageFrame.
-    MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
-        [&packet, &output_frame, &gpu_helper]() -> ::mediapipe::Status {
-          auto& gpu_frame = packet.Get<mediapipe::GpuBuffer>();
-          auto texture = gpu_helper.CreateSourceTexture(gpu_frame);
-          output_frame = absl::make_unique<mediapipe::ImageFrame>(
-              mediapipe::ImageFormatForGpuBufferFormat(gpu_frame.format()),
-              gpu_frame.width(), gpu_frame.height(),
-              mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
-          gpu_helper.BindFramebuffer(texture);
-          const auto info =
-              mediapipe::GlTextureInfoForGpuBufferFormat(gpu_frame.format(), 0);
-          glReadPixels(0, 0, texture.width(), texture.height(), info.gl_format,
-                       info.gl_type, output_frame->MutablePixelData());
-          glFlush();
-          texture.Release();
-          return ::mediapipe::OkStatus();
-        }));
-  
-    // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(output_frame.get());
-    cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
-    if (save_video) {
-      writer.write(output_frame_mat);
-    } else {
-    
-      cv::imshow(kWindowName, output_frame_mat);
-      // Press any key to exit.
-      const int pressed_key = cv::waitKey(1);
-      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
-    }
-  #endif // IMSHOW_ENABLE
-  
   #ifdef SECOND_HAND
     // second hand
     auto input_frame_second = absl::make_unique<mediapipe::ImageFrame>(
@@ -367,8 +333,42 @@ struct timespec diff(struct timespec start, struct timespec end) {
     std::unique_ptr<mediapipe::ImageFrame> output_frame_second;
     auto& output_landmarks_second = landmark_packet_second.Get<std::vector<::mediapipe::NormalizedLandmark>>();
     auto& output_rect_second = rect_packet_second.Get<::mediapipe::NormalizedRect>();
-  
+  #endif
+
   #ifdef IMSHOW_ENABLE
+    // Convert GpuBuffer to ImageFrame.
+    MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
+        [&packet, &output_frame, &gpu_helper]() -> ::mediapipe::Status {
+          auto& gpu_frame = packet.Get<mediapipe::GpuBuffer>();
+          auto texture = gpu_helper.CreateSourceTexture(gpu_frame);
+          output_frame = absl::make_unique<mediapipe::ImageFrame>(
+              mediapipe::ImageFormatForGpuBufferFormat(gpu_frame.format()),
+              gpu_frame.width(), gpu_frame.height(),
+              mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+          gpu_helper.BindFramebuffer(texture);
+          const auto info =
+              mediapipe::GlTextureInfoForGpuBufferFormat(gpu_frame.format(), 0);
+          glReadPixels(0, 0, texture.width(), texture.height(), info.gl_format,
+                       info.gl_type, output_frame->MutablePixelData());
+          glFlush();
+          texture.Release();
+          return ::mediapipe::OkStatus();
+        }));
+  
+    // Convert back to opencv for display or saving.
+    cv::Mat output_frame_mat = mediapipe::formats::MatView(output_frame.get());
+    cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+    if (save_video) {
+      writer.write(output_frame_mat);
+    } else {
+    
+      cv::imshow(kWindowName, output_frame_mat);
+      // Press any key to exit.
+      const int pressed_key = cv::waitKey(1);
+      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    }
+  
+  #ifdef SECOND_HAND
     // Convert GpuBuffer to ImageFrame.
     MP_RETURN_IF_ERROR(gpu_helper_second.RunInGlContext(
         [&packet_second, &output_frame_second, &gpu_helper_second]() -> ::mediapipe::Status {
@@ -400,8 +400,8 @@ struct timespec diff(struct timespec start, struct timespec end) {
       const int pressed_key = cv::waitKey(1);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
-  #endif //#endif IMSHOW_ENABLE
   #endif //#endif SECOND_HAND
+  #endif //#endif IMSHOW_ENABLE
 
     // restore landmark to shm array
     //Open the managed segment
@@ -479,6 +479,7 @@ struct timespec diff(struct timespec start, struct timespec end) {
   gesture_time = (temp.tv_sec + (double) temp.tv_nsec / 1000000000.0);
   gesture_fps = gesture_cnt / gesture_time;
 #endif
+
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
