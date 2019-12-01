@@ -35,6 +35,7 @@ cc_library(
         "@org_tensorflow//tensorflow/lite:framework",
         "@boost//:interprocess",
         #"//mediapipe/landmarks_to_shm:landmarks_datatype"
+        "//third_party:opencv",
     ],
     visibility = ["//visibility:public"],
     alwayslink = 1,

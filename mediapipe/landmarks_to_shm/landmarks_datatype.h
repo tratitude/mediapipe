@@ -12,10 +12,12 @@
 // Config Options
 #define THREE_D
 //#define PRINT_DEBUG
+//#define PRINT_BBCENTRAL
 //#define IMSHOW_ENABLE
-#define FPS_TEST
-//#define FPS60
+//#define FPS_TEST
+#define FPS60
 #define SECOND_HAND
+#define ANGLE_SIM   // enable angle similarity else enable coordinate similarity
 //*********************************/
 
 namespace landmarks_datatype{
@@ -127,12 +129,9 @@ namespace landmarks_datatype{
     extern const char *shm_name_second;
     extern const char *bbCentral_name;
     extern const char *bbCentral_name_second;
-    extern const coordinate3d_t image_size;
-    extern char *gesture_path;
 
     coordinate3d_t cross_product(const coordinate3d_t &a, const coordinate3d_t &b);
-    float dot_product3d(const coordinate3d_t &a, const coordinate3d_t &b);
+    float dot_product(const coordinate3d_t &a, const coordinate3d_t &b);
     std::ostream& operator <<(std::ostream& os, const coordinate3d_t &p);
-    void init_gesture_path(void);
 }
 #endif

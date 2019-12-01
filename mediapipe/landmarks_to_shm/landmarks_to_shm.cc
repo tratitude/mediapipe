@@ -4,6 +4,9 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
 #include "landmarks_to_shm.h"
 
 landmarks_to_shm::shm::shm(const char _landmark_shm_name[], const char _bbCentral_shm_name[], const char _shm_name[])
@@ -137,6 +140,8 @@ landmarks_to_shm::gesture::gesture(const char _landmark_shm_name[], const char _
     std::strncpy(landmark_shm_name_, _landmark_shm_name, 10);
     std::strncpy(bbCentral_shm_name_, _bbCentral_shm_name, 10);
     std::strncpy(shm_name_, _shm_name, 10);
+    init_image_size();
+    init_gesture_path();
     init_gestures3d();
     init_norm_landmark3d();
     init_cmp_angle_joints();
@@ -149,7 +154,7 @@ landmarks_to_shm::gesture::~gesture()
     delete_cmp_angle_joints();
 }
 
-void landmarks_to_shm::gesture::store_gestures3d(const std::string &_dir)
+void landmarks_to_shm::gesture::store_gestures3d()
 {
     for(int i=0; i<gesture_max_num_; i++){
         std::puts("Usage: [OPTION]");
@@ -159,25 +164,27 @@ void landmarks_to_shm::gesture::store_gestures3d(const std::string &_dir)
 
         char input_signal;
         std::cin >> input_signal;
-        
         if(input_signal == 'd'){
-            store_gestures3d(i, _dir);
+            store_gestures3d(i);
         }
         else if(input_signal == 'c'){
             int gesture_num; std::cin >> gesture_num;
-            store_gestures3d(gesture_num, _dir);
+            store_gestures3d(gesture_num);
         }
         else if(input_signal == 'q'){
             break;
         }
+        else{
+            --i;
+        }
     }
 }
 
-void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::string &_dir)
+void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num)
 {
     std::printf("num: %d gesture\n", _gesture_num);
 
-    const std::string path = _dir + "/" + std::to_string(_gesture_num)+".gesture";
+    const std::string path = std::string(gesture_path_) + "/" + std::to_string(_gesture_num)+".gesture";
     #ifdef PRINT_DEBUG
         std::puts("load_gesture: dir");
         std::cout << path;
@@ -223,10 +230,10 @@ void landmarks_to_shm::gesture::store_gestures3d(int _gesture_num, const std::st
     //load_resize_rotate_gestures3d(_dir);
 }
 
-void landmarks_to_shm::gesture::load_resize_rotate_gestures3d(const std::string &_dir)
+void landmarks_to_shm::gesture::load_resize_rotate_gestures3d()
 {
     for(int i=0; i<gesture_num_; i++){
-        const std::string path = _dir + "/" + std::to_string(i)+".gesture";
+        const std::string path = std::string(gesture_path_) + "/" + std::to_string(i)+".gesture";
     #ifdef PRINT_DEBUG
         std::puts("load_gesture: dir");
         std::cout << path << "\n";
@@ -250,7 +257,6 @@ void landmarks_to_shm::gesture::load_resize_rotate_gestures3d(const std::string 
         gestures3d_[i].name = s;
 
         resize_rotate3d(gestures3d_[i].co);
-        //init_angle3d(gestures3d_[i].co);
         
         gesture_file.close();
     }
@@ -260,13 +266,15 @@ void landmarks_to_shm::gesture::resize_rotate3d(landmarks_datatype::coordinate3d
 {
     resize(_landmark3d);
     norm_root(_landmark3d);
-    init_angle3d(_landmark3d);
+    init_angle(_landmark3d);
+#ifndef ANGLE_SIM
 #ifdef THREE_D
     // 3d
     init_crossVector(_landmark3d);
     Rodrigues_z(_landmark3d);
 #endif
     rotate2d_y(_landmark3d);
+#endif
 }
 
 void landmarks_to_shm::gesture::init_gesture_num(void)
@@ -287,7 +295,7 @@ void landmarks_to_shm::gesture::print_gestures3d(void)
 float landmarks_to_shm::gesture::similarity(void)
 {
     int max_gesture = -1;
-    float max_similarity = (-1)*landmarks_datatype::norm_landmark_size*(landmarks_datatype::image_size.x+landmarks_datatype::image_size.y);
+    float max_similarity = (-1)*landmarks_datatype::norm_landmark_size*(image_size_.x+image_size_.y);
     
     // normalize landmarks by gesture distance of root to middle MCP
     for(int gesture_cnt=0; gesture_cnt<gesture_num_; gesture_cnt++){
@@ -344,13 +352,18 @@ float landmarks_to_shm::gesture::angle_similarity(void)
         float ges_sim = 0.f;
         for(int joint_cnt=0; joint_cnt<cmp_angle_joints_num_; joint_cnt++){
             int joint = cmp_angle_joints_[joint_cnt];
-            ges_sim += (gestures3d_[gesture_cnt].co[joint].angle - norm_landmark3d_[joint].angle);
+            ges_sim += fabs(gestures3d_[gesture_cnt].co[joint].angle - norm_landmark3d_[joint].angle);
         }
         if(ges_sim < max_sim){
             max_sim = ges_sim;
             max_gesture = gesture_cnt;
         }
     }
+
+#ifdef PRINT_DEBUG
+    std::cout << "max_sim: " << max_sim << " max_gesture: " << max_gesture << "\n";
+#endif
+
     if(max_sim > similarity_angle_upbound_){
         max_gesture = -1;
     }
@@ -425,7 +438,7 @@ void landmarks_to_shm::gesture::Rodrigues_z(landmarks_datatype::coordinate3d_t* 
     std::cout << v_head;
 #endif
     for(int i=1; i<landmarks_datatype::norm_landmark_size; i++){
-        _landmark3d[i] = _landmark3d[i] * (-1) + v_head * 2 * landmarks_datatype::dot_product3d(v_head, _landmark3d[i]);
+        _landmark3d[i] = _landmark3d[i] * (-1) + v_head * 2 * landmarks_datatype::dot_product(v_head, _landmark3d[i]);
     }
 #ifdef PRINT_DEBUG
     std::puts("Rodrigues_z: _landmark3d");
@@ -469,21 +482,20 @@ void landmarks_to_shm::gesture::load_resize_rotate_norm_landmark3d(
         norm_landmark3d_[i] = _shm_norm_landmark3d[i];
     }
 #ifdef PRINT_DEBUG
-    std::puts("similarity, after load: norm_landmark3d_");
+    std::puts("after load: norm_landmark3d_");
     for(int i=0; i<21; i++){
         std::cout << i << " " <<  norm_landmark3d_[i];
     }
 #endif
 
     resize_rotate3d(norm_landmark3d_);
-    //init_angle3d(norm_landmark3d_);
 }
 
 void landmarks_to_shm::gesture::resize(
     landmarks_datatype::coordinate3d_t* _norm_landmark3d)
 {
     for(int i=0; i<landmarks_datatype::norm_landmark_size; i++){
-        _norm_landmark3d[i] = _norm_landmark3d[i] * landmarks_datatype::image_size;
+        _norm_landmark3d[i] = _norm_landmark3d[i] * image_size_;
     }
 #ifdef PRINT_DEBUG
     std::puts("resize: _norm_landmark3d");
@@ -520,12 +532,13 @@ void landmarks_to_shm::gesture::norm_root(landmarks_datatype::coordinate3d_t* _l
 #endif
 }
 
-float landmarks_to_shm::gesture::cosine_angle3d(
+float landmarks_to_shm::gesture::cosine_angle(
     landmarks_datatype::coordinate3d_t a, landmarks_datatype::coordinate3d_t b, landmarks_datatype::coordinate3d_t c)
 {
     const landmarks_datatype::coordinate3d_t x = a - b;
     const landmarks_datatype::coordinate3d_t y = c - b;
-    float const cosine = landmarks_datatype::dot_product3d(x, y) / (x.distance3d() * y.distance3d());
+    float const cosine = landmarks_datatype::dot_product(x, y) / (x.distance3d() * y.distance3d());
+
 #ifdef PRINT_DEBUG
     std::puts("cosine_angle3d: x, y, cosine, x.distance, y.distance");
     std::cout << x << " " << y << " " << cosine << " " << x.distance3d() << " " << y.distance3d() << "\n";
@@ -533,11 +546,11 @@ float landmarks_to_shm::gesture::cosine_angle3d(
     return acosf(cosine);
 }
 
-void landmarks_to_shm::gesture::init_angle3d(landmarks_datatype::coordinate3d_t* _landmark3d)
+void landmarks_to_shm::gesture::init_angle(landmarks_datatype::coordinate3d_t* _landmark3d)
 {
     for(int i=0; i<cmp_angle_joints_num_; i++){
         int joint = cmp_angle_joints_[i];
-        _landmark3d[joint].angle = cosine_angle3d(_landmark3d[joint-1], _landmark3d[joint], _landmark3d[joint+1]);
+        _landmark3d[joint].angle = cosine_angle(_landmark3d[joint-1], _landmark3d[joint], _landmark3d[joint+1]);
     }
 }
 
@@ -552,4 +565,25 @@ void landmarks_to_shm::gesture::init_cmp_angle_joints(void)
 void landmarks_to_shm::gesture::delete_cmp_angle_joints(void)
 {
     delete cmp_angle_joints_;
+}
+
+void landmarks_to_shm::gesture::init_gesture_path(void)
+{
+    // linux dependency
+    char *symlinkpath = "../mediapipe/store_gesture";
+    gesture_path_ = new char[PATH_MAX+1];
+    realpath(symlinkpath, gesture_path_);
+}
+
+void landmarks_to_shm::gesture::init_image_size(void)
+{
+    cv::VideoCapture capture(cv::CAP_DSHOW + 0);
+    capture.open(0);
+    if (!capture.isOpened()) {
+        std::cerr << "ERROR! Unable to open camera\n";
+        exit(EXIT_FAILURE);
+    }
+    cv::Mat test_frame;
+    capture.read(test_frame);
+    image_size_ = {test_frame.size().width, test_frame.size().height, 1};
 }

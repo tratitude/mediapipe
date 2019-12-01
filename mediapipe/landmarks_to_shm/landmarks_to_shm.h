@@ -31,9 +31,9 @@ namespace landmarks_to_shm{
     public:
         gesture(const char _landmark_shm_name[], const char _bbCentral_shm_name[], const char _shm_name[]);
         ~gesture();
-        void store_gestures3d(const std::string &_dir);
-        void store_gestures3d(int _gesture_num, const std::string &_dir);
-        void load_resize_rotate_gestures3d(const std::string &_dir);
+        void store_gestures3d(void);
+        void store_gestures3d(int _gesture_num);
+        void load_resize_rotate_gestures3d(void);
         void print_gestures3d(void);
         void init_gestures3d(void);
         void delete_gestures3d(void);
@@ -53,13 +53,15 @@ namespace landmarks_to_shm{
         void resize_rotate3d(landmarks_datatype::coordinate3d_t* _landmark3d);
         // angle of vector x = a-b and vector y = c-b
         // angle = acos( (x dot y)/(|x|*|y|) )
-        float cosine_angle3d(landmarks_datatype::coordinate3d_t a, landmarks_datatype::coordinate3d_t b, landmarks_datatype::coordinate3d_t c);
+        float cosine_angle(landmarks_datatype::coordinate3d_t a, landmarks_datatype::coordinate3d_t b, landmarks_datatype::coordinate3d_t c);
         float angle_similarity(void);
 
-        void init_angle3d(landmarks_datatype::coordinate3d_t* _landmark3d);
+        void init_angle(landmarks_datatype::coordinate3d_t* _landmark3d);
         void init_crossVector(landmarks_datatype::coordinate3d_t* _landmark3d);
         void init_cmp_angle_joints(void);
         void delete_cmp_angle_joints(void);
+        void init_gesture_path(void);
+        void init_image_size(void);
 
         // Wraps around an angle in radians to within -M_PI and M_PI.
         inline float NormalizeRadians(float angle) {
@@ -83,12 +85,14 @@ namespace landmarks_to_shm{
         const int start_keypoint_index_ = 0;  // wrist joint
         const int end_keypoint_index_ = 9;  // middle MCP joint
         const int gesture_max_num_ = 32;
-        const float similarity_distance_lowbound_ = -150.f;
+        const float similarity_distance_lowbound_ = -170.f;
         const int start_crossVector_index_ = 13;
         const int end_crossVector_index_ = 5;
-        const float similarity_angle_upbound_ = 0.01f;
+        const float similarity_angle_upbound_ = 1.5f;
         const int cmp_angle_joints_num_ = 15;
         int *cmp_angle_joints_;
+        landmarks_datatype::coordinate3d_t image_size_;
+        char *gesture_path_;
     };
 }
 

@@ -420,14 +420,21 @@ struct timespec diff(struct timespec start, struct timespec end) {
     // shmObj, gesObj is global object
     gesObj.load_resize_rotate_norm_landmark3d(norm_landmark);
     
-    //float match_gesture = gesObj.similarity();
+  #ifdef ANGLE_SIM
     float match_gesture = gesObj.angle_similarity();
+  #else
+    float match_gesture = gesObj.similarity();
+  #endif
 
     landmarks_datatype::coordinate3d_t *bbCentral = 
         segment.find<landmarks_datatype::coordinate3d_t>(
         shmObj.bbCentral_shm_name_).first;
     // x=x_center, y=y_center, z=match_gesture
     bbCentral[0] = {output_rect.x_center(), output_rect.y_center(), match_gesture};
+  
+  #ifdef PRINT_BBCENTRAL
+    std::cout << "first gesture: " << bbCentral[0];
+  #endif
 
   #ifdef SECOND_HAND
     // restore landmark to shm array
@@ -447,15 +454,21 @@ struct timespec diff(struct timespec start, struct timespec end) {
     // shmObj, gesObj is global object
     gesObj_second.load_resize_rotate_norm_landmark3d(norm_landmark_second);
     
-    //float match_gesture = gesObj.similarity();
+    #ifdef ANGLE_SIM
     float match_gesture_second = gesObj_second.angle_similarity();
+  #else
+    float match_gesture_second = gesObj_second.similarity();
+  #endif
 
     landmarks_datatype::coordinate3d_t *bbCentral_second = 
         segment_second.find<landmarks_datatype::coordinate3d_t>(
         shmObj_second.bbCentral_shm_name_).first;
     // x=x_center, y=y_center, z=match_gesture
     bbCentral_second[0] = {output_rect_second.x_center(), output_rect_second.y_center(), match_gesture_second};
-
+  
+  #ifdef PRINT_BBCENTRAL
+    std::cout << "second gesture: " << bbCentral_second[0];
+  #endif
 
   #endif
 
@@ -496,14 +509,13 @@ struct timespec diff(struct timespec start, struct timespec end) {
 }
 
 int main(int argc, char** argv) {
-  landmarks_datatype::init_gesture_path();
   // ges, shm are global object
-  gesObj.load_resize_rotate_gestures3d(landmarks_datatype::gesture_path);
+  gesObj.load_resize_rotate_gestures3d();
   gesObj.print_gestures3d();
 
 #ifdef SECOND_HAND
   std::puts("second load gestures3d");
-  gesObj_second.load_resize_rotate_gestures3d(landmarks_datatype::gesture_path);
+  gesObj_second.load_resize_rotate_gestures3d();
   gesObj_second.print_gestures3d();
 #endif
 

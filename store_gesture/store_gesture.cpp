@@ -91,10 +91,10 @@ int main()
                 print_gesture_shm();
                 break;
             case 'd':
-                ges.store_gestures3d(".");
+                ges.store_gestures3d();
                 break;
             case 'c':
-                ges.load_resize_rotate_gestures3d(".");
+                ges.load_resize_rotate_gestures3d();
                 ges.gesture_similarity_test();
                 break;
             case 'q':
