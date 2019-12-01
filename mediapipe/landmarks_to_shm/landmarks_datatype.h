@@ -16,7 +16,7 @@
 //#define IMSHOW_ENABLE
 //#define FPS_TEST
 #define FPS60
-#define SECOND_HAND
+//#define SECOND_HAND
 #define ANGLE_SIM   // enable angle similarity else enable coordinate similarity
 //*********************************/
 

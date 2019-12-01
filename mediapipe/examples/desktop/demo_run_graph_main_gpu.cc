@@ -509,12 +509,14 @@ struct timespec diff(struct timespec start, struct timespec end) {
 }
 
 int main(int argc, char** argv) {
+  gesObj.init_image_size();
   // ges, shm are global object
   gesObj.load_resize_rotate_gestures3d();
   gesObj.print_gestures3d();
 
 #ifdef SECOND_HAND
   std::puts("second load gestures3d");
+  gesObj_second.init_image_size();
   gesObj_second.load_resize_rotate_gestures3d();
   gesObj_second.print_gestures3d();
 #endif

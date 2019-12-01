@@ -140,7 +140,6 @@ landmarks_to_shm::gesture::gesture(const char _landmark_shm_name[], const char _
     std::strncpy(landmark_shm_name_, _landmark_shm_name, 10);
     std::strncpy(bbCentral_shm_name_, _bbCentral_shm_name, 10);
     std::strncpy(shm_name_, _shm_name, 10);
-    init_image_size();
     init_gesture_path();
     init_gestures3d();
     init_norm_landmark3d();
@@ -577,13 +576,13 @@ void landmarks_to_shm::gesture::init_gesture_path(void)
 
 void landmarks_to_shm::gesture::init_image_size(void)
 {
-    cv::VideoCapture capture(cv::CAP_DSHOW + 0);
+    cv::VideoCapture capture(0);
     capture.open(0);
     if (!capture.isOpened()) {
         std::cerr << "ERROR! Unable to open camera\n";
         exit(EXIT_FAILURE);
     }
-    cv::Mat test_frame;
-    capture.read(test_frame);
-    image_size_ = {test_frame.size().width, test_frame.size().height, 1};
+    float w = capture.get(cv::CAP_PROP_FRAME_WIDTH);
+    float h = capture.get(cv::CAP_PROP_FRAME_HEIGHT);
+    image_size_ = landmarks_datatype::coordinate3d_t(w, h, 1);
 }
