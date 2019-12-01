@@ -88,7 +88,7 @@ namespace landmarks_to_shm{
         const float similarity_distance_lowbound_ = -170.f;
         const int start_crossVector_index_ = 13;
         const int end_crossVector_index_ = 5;
-        const float similarity_angle_upbound_ = 1.5f;
+        const float similarity_angle_upbound_ = 2.0f;
         const int cmp_angle_joints_num_ = 15;
         int *cmp_angle_joints_;
         landmarks_datatype::coordinate3d_t image_size_;
